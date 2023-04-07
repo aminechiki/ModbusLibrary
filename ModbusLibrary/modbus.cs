@@ -37,91 +37,46 @@ namespace ModbusLibrary
             return statePort;
         }
 
-        //FC 01 - READ COIL STATUS
-        public void ReadCoilStatus(byte addressSlave, ushort coilStartRead, ushort numberCoilsRead)
-        {
-            byte typeOfFunction = 1;
-            byte[] messageSendSlave = new byte[8];
-            byte[] response = new byte[5 + numberCoilsRead];
-
-            //2 - Create a message send to slave
-            BuildMessageReadCoilStatus(addressSlave, messageSendSlave, typeOfFunction, coilStartRead, numberCoilsRead);
-            Console.WriteLine("FC 01 - MESSAGGIO INVIATO");
-            foreach(byte m in messageSendSlave)
-            {
-                Console.WriteLine(m);
-            }
-
-            //3 - Send a message to Slave 
-            try
-            {
-                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                GetResponse(response);
-                Console.WriteLine("FC01 - MESSAGGIO RICEVUTO");
-                for (int i = 0; i < response.Length; i++)
-                {
-                    Console.WriteLine(response[i]);
-                }
-            }
-            catch (Exception err)
-            {
-                Console.WriteLine(err);
-            }
-        }
-
-        public void BuildMessageReadCoilStatus(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, ushort coilStartRead, ushort numberCoilsRead) 
-        {
-            //Array to receive CRC bytes:
-            byte[] CRC = new byte[2];
-            //- Builds the message com eindicated in the modbus protocol for function FC01
-            //address Slave
-            messageSendSlave[0] = addressSlave;
-            //type of function
-            messageSendSlave[1] = typeOfFunction;
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[2] = (byte)(coilStartRead >> 8);
-            messageSendSlave[3] = (byte)coilStartRead;
-            //If stateOut is true send messagge 0xFF then 0x00; this result is divide in two byte
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[4] = (byte)(numberCoilsRead >> 8);
-            messageSendSlave[5] = (byte)numberCoilsRead;
-            //CRC - get the CRC with the methd and pot resul in two last position
-            GetCRC(messageSendSlave, CRC);
-            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
-            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
-        }
-
-
-        //FC 05 - READ HOLDING REGISTERS
-        public void ReadHoldingRegisters(byte addressSlave, ushort addressMemoryStartRead, ushort numberRegistersRead)
+        // - FUNCTION FOR READ
+        public void ReadModbus(byte typeOfFunction, byte addressSlave, ushort coilStartRead, ushort numberRegistersRead)
         {
             byte[] messageSendSlave = new byte[8];
-            byte typeOfFunction = 3;
-
-            //1 - Clear buffer in In and Out of serial Port
+            byte[] responseFromSlave = new byte[0];
+            //1 - based onthe type ti function will be set the correct size of the response array
+            switch (typeOfFunction)
+            {
+                case 1:
+                    responseFromSlave = new byte[5 + numberRegistersRead];
+                    break;
+                case 3:
+                    responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+                    break;
+                case 4:
+                    responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+                    break;
+            }         
+            //2 - Clear buffer in In and Out of serial Port
             serialPort.DiscardOutBuffer();
             serialPort.DiscardInBuffer();
-            //2 - Create a message send to slave
-            BuildMessageReadHoldingRegisters(addressSlave, typeOfFunction, addressMemoryStartRead, numberRegistersRead, messageSendSlave);
-            
-            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
+
+            //3 - Create a message send to slave
+            BuildMessageRead(addressSlave, messageSendSlave, typeOfFunction, coilStartRead, numberRegistersRead);
+            Console.WriteLine("FC 01 - MESSAGGIO INVIATO");
             foreach (byte m in messageSendSlave)
             {
                 Console.WriteLine(m);
-            }         
-
-            //3 - Take the response from Slave
-            byte[] response = new byte[5 + 2 * numberRegistersRead];
-
+            }
             //4 - Send a message to Slave 
             try
             {
                 serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                GetResponse(response);
-                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
-                for (int i = 0; i < response.Length; i++)
+                GetResponse(responseFromSlave);
+                Console.WriteLine("FC01 - MESSAGGIO RICEVUTO");
+                for (int i = 0; i < responseFromSlave.Length; i++)
                 {
-                    if (i == 4) Console.WriteLine(response[i] | response[i - 1] << 8);
+                    Console.WriteLine(responseFromSlave[i]);
+                    //if (i == 4) Console.WriteLine(responseFromSlave[i] | responseFromSlave[i - 1] << 8);
+                    //if (i == 6) Console.WriteLine(responseFromSlave[i] | responseFromSlave[i - 1] << 8);
                 }
             }
             catch (Exception err)
@@ -129,6 +84,8 @@ namespace ModbusLibrary
                 Console.WriteLine(err);
             }
         }
+
+        // - FUNCTION FOR WRITE
 
         //FC 05 WRITE SINGLE COIL
         public void WriteSingleCoil(byte addressSlave, ushort coilAddress, bool stateOut)
@@ -192,27 +149,6 @@ namespace ModbusLibrary
             messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
         }
 
-        private void BuildMessageReadHoldingRegisters(byte address, byte type, ushort start, ushort registers, byte[] message)
-        {
-            //Array to receive CRC bytes:
-            byte[] CRC = new byte[2];
-            //Builds the message com eindicated in the modbus protocol for function FC03
-            //address Slave
-            message[0] = address;
-            //type of function
-            message[1] = type;
-            //is divided into two bytes the value , the first one shifted by 8
-            message[2] = (byte)(start >> 8);
-            message[3] = (byte)start;
-            //is divided into two bytes the value , the first one shifted by 8
-            message[4] = (byte)(registers >> 8);
-            message[5] = (byte)registers;
-
-            //CRC - sono gli ultimo 2 bit
-            GetCRC(message, CRC);
-            message[message.Length - 2] = CRC[0];
-            message[message.Length - 1] = CRC[1];
-        }
 
         //These are the methods used by all functions
         private void GetResponse(byte[] response)
@@ -248,10 +184,32 @@ namespace ModbusLibrary
                     }
                 }
             }
-
             //2 - CRC is split into two bytes, the first one shifted by 8
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
+        }
+
+        //method use in function for Build a messagge to send to slave
+        public void BuildMessageRead(byte addressSlave, byte[] message, byte typeOfFunction, ushort addressMemoryStartRead, ushort numberRegistersRead)
+        {
+            //Array to receive CRC bytes: 
+            byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function FC01
+            //address Slave
+            message[0] = addressSlave;
+            //type of function
+            message[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            message[2] = (byte)(addressMemoryStartRead >> 8);
+            message[3] = (byte)addressMemoryStartRead;
+            //If stateOut is true send messagge 0xFF then 0x00; this result is divide in two byte
+            //is divided into two bytes the value , the first one shifted by 8
+            message[4] = (byte)(numberRegistersRead >> 8);
+            message[5] = (byte)numberRegistersRead;
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(message, CRC);
+            message[message.Length - 2] = CRC[0];
+            message[message.Length - 1] = CRC[1];
         }
     }
 }

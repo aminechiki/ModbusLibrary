@@ -7,9 +7,6 @@ namespace ModbusLibrary
         public static void Main()
         {
             bool state_port;
-            byte address = 10;
-            ushort start = 50;
-            ushort registers = 1;
 
             modbus communicationArduino = new modbus();
             state_port = communicationArduino.OpenPort("COM10", 9600, 8, System.IO.Ports.Parity.None, System.IO.Ports.StopBits.One);
@@ -17,29 +14,22 @@ namespace ModbusLibrary
 
             if (state_port)
             {
-                //FC 01 - READ COIL STATUS
-                ushort coilStartRead = 1;
-                ushort numberCoilsRead = 1;
-                communicationArduino.ReadCoilStatus(address, coilStartRead, numberCoilsRead);
-                
+                //settings for read a register in modbus
+                //-type of function
+                //-address slave
+                //-address start read
+                //-how many address you want to read
+                communicationArduino.ReadModbus(4, 10, 55 ,6);
 
-                //FC 03 - READ HOLDING REGISTERS
 
-                /*
-                while (true)
-                {
-                    communicationArduino.ReadHoldingRegisters(address, start, registers);
-                }
-                */
+                // WRITE //
 
                 //FC 05 WRITE SINGLE COIL
 
                 ushort coilAdress = 1;
-                bool stateOutCoil = true;
-                //communicationArduino.WriteSingleCoil(address, coilAdress, stateOutCoil);
-
+                bool stateOutCoil = false;
+                //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
             }
-
         }
     }
 }
