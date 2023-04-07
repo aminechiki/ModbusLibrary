@@ -85,7 +85,7 @@ namespace ModbusLibrary
             }
         }
 
-        // - FUNCTION FOR WRITE
+        // - FUNCTION FOR WRITE ///////////////////////////////////////////////////////////////////////////////////////////
 
         //FC 05 WRITE SINGLE COIL
         public void WriteSingleCoil(byte addressSlave, ushort coilAddress, bool stateOut)
@@ -148,6 +148,121 @@ namespace ModbusLibrary
             messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
             messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
         }
+
+        //FC 15 WRITE MULTIPLE COILS
+        public void WriteMultipleCoils(byte addressSlave, byte typeOfFunction, ushort addressStartWrite, ushort numberCoilsWrite)
+        {
+            byte[] messageSendSlave = new byte[9];
+            byte[] responseFromSlave = new byte[8];
+            //1 - Clear
+            serialPort.DiscardOutBuffer();
+            serialPort.DiscardInBuffer();
+            //1 - Build a messagge send to slave
+            BuildMessageWriteMultipleCoils(messageSendSlave, addressSlave, typeOfFunction, addressStartWrite, numberCoilsWrite);
+            Console.WriteLine("MESSAGGIO INVIATO");
+            foreach (byte m in messageSendSlave)
+            {
+                Console.WriteLine(m);
+            }
+
+            try
+            {
+                //2 - Send a messagge to slave
+                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
+                //3 - get respone from slave
+                GetResponse(responseFromSlave);
+                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                foreach (byte m in responseFromSlave)
+                {
+                    Console.WriteLine(m);
+                }
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+            }
+
+        }
+
+        public void BuildMessageWriteMultipleCoils(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, ushort addressStartWrite, ushort numberCoilsWrite)
+        {
+            //Array to receive CRC bytes:
+            byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function FC05
+            //address Slave
+            messageSendSlave[0] = addressSlave;
+            //type of function
+            messageSendSlave[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[2] = (byte)(addressStartWrite >> 8);
+            messageSendSlave[3] = (byte)addressStartWrite;
+
+            messageSendSlave[4] = (byte)2;
+            messageSendSlave[5] = (byte)1;
+            messageSendSlave[6] = (byte)3;
+
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(messageSendSlave, CRC);
+            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
+            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+        }
+
+
+        // FC 06 WRITE SINGLE REGISTERS
+        public void WriteSingleRegisters(byte addressSlave, byte typeOfFunction, ushort addressWrite, ushort dataWrite)
+        {
+            byte[] messageSendSlave = new byte[8];
+            byte[] responseFromSlave = new byte[8];
+
+
+            //1 - Build a messagge send to slave
+            BuildMessageWriteSingleRegisters(messageSendSlave, addressSlave, typeOfFunction, addressWrite, dataWrite);
+            Console.WriteLine("MESSAGGIO INVIATO");
+            foreach (byte m in messageSendSlave)
+            {
+                Console.WriteLine(m);
+            }
+
+            try
+            {
+                //2 - Send a messagge to slave
+                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
+                //3 - get respone from slave
+                GetResponse(responseFromSlave);
+                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                foreach (byte m in responseFromSlave)
+                {
+                    Console.WriteLine(m);
+                }
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+            }
+        }
+
+        public void BuildMessageWriteSingleRegisters(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, ushort addressWrite, ushort dataWrite)
+        {
+            //Array to receive CRC bytes:
+            byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function FC05
+            //address Slave
+            messageSendSlave[0] = addressSlave;
+            //type of function
+            messageSendSlave[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[2] = (byte)(addressWrite >> 8);
+            messageSendSlave[3] = (byte)addressWrite;
+            //If stateOut is true send messagge 0xFF then 0x00; this result is divide in two byte
+            messageSendSlave[4] = (byte)(dataWrite >> 8);
+            messageSendSlave[5] = (byte)dataWrite;
+
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(messageSendSlave, CRC);
+            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
+            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+        }
+
 
 
         //These are the methods used by all functions

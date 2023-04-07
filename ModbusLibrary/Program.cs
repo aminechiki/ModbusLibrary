@@ -19,7 +19,7 @@ namespace ModbusLibrary
                 //-address slave
                 //-address start read
                 //-how many address you want to read
-                communicationArduino.ReadModbus(4, 10, 55 ,6);
+                //communicationArduino.ReadModbus(4, 10, 55 ,6);
 
 
                 // WRITE //
@@ -29,6 +29,13 @@ namespace ModbusLibrary
                 ushort coilAdress = 1;
                 bool stateOutCoil = false;
                 //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
+
+
+                //WRITE REGISTERS
+
+                communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
+                //communicationArduino.WriteSingleRegisters(10, 6, 55, 33);
+
             }
         }
     }
