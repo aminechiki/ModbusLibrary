@@ -37,7 +37,62 @@ namespace ModbusLibrary
             return statePort;
         }
 
-        //FC - 05
+        //FC 01 - READ COIL STATUS
+        public void ReadCoilStatus(byte addressSlave, ushort coilStartRead, ushort numberCoilsRead)
+        {
+            byte typeOfFunction = 1;
+            byte[] messageSendSlave = new byte[8];
+            byte[] response = new byte[5 + numberCoilsRead];
+
+            //2 - Create a message send to slave
+            BuildMessageReadCoilStatus(addressSlave, messageSendSlave, typeOfFunction, coilStartRead, numberCoilsRead);
+            Console.WriteLine("FC 01 - MESSAGGIO INVIATO");
+            foreach(byte m in messageSendSlave)
+            {
+                Console.WriteLine(m);
+            }
+
+            //3 - Send a message to Slave 
+            try
+            {
+                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
+                GetResponse(response);
+                Console.WriteLine("FC01 - MESSAGGIO RICEVUTO");
+                for (int i = 0; i < response.Length; i++)
+                {
+                    Console.WriteLine(response[i]);
+                }
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+            }
+        }
+
+        public void BuildMessageReadCoilStatus(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, ushort coilStartRead, ushort numberCoilsRead) 
+        {
+            //Array to receive CRC bytes:
+            byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function FC01
+            //address Slave
+            messageSendSlave[0] = addressSlave;
+            //type of function
+            messageSendSlave[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[2] = (byte)(coilStartRead >> 8);
+            messageSendSlave[3] = (byte)coilStartRead;
+            //If stateOut is true send messagge 0xFF then 0x00; this result is divide in two byte
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[4] = (byte)(numberCoilsRead >> 8);
+            messageSendSlave[5] = (byte)numberCoilsRead;
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(messageSendSlave, CRC);
+            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
+            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+        }
+
+
+        //FC 05 - READ HOLDING REGISTERS
         public void ReadHoldingRegisters(byte addressSlave, ushort addressMemoryStartRead, ushort numberRegistersRead)
         {
             byte[] messageSendSlave = new byte[8];
@@ -46,7 +101,6 @@ namespace ModbusLibrary
             //1 - Clear buffer in In and Out of serial Port
             serialPort.DiscardOutBuffer();
             serialPort.DiscardInBuffer();
-
             //2 - Create a message send to slave
             BuildMessageReadHoldingRegisters(addressSlave, typeOfFunction, addressMemoryStartRead, numberRegistersRead, messageSendSlave);
             
@@ -76,8 +130,7 @@ namespace ModbusLibrary
             }
         }
 
-
-
+        //FC 05 WRITE SINGLE COIL
         public void WriteSingleCoil(byte addressSlave, ushort coilAddress, bool stateOut)
         {
             byte typeOfFunction = 5;
@@ -109,7 +162,6 @@ namespace ModbusLibrary
                 Console.WriteLine(err);
             }
         }
-
         public void BuildMessageWriteSingleCoil(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, ushort coilAddress, bool stateOut)
         {
             //Array to receive CRC bytes:
@@ -162,7 +214,7 @@ namespace ModbusLibrary
             message[message.Length - 1] = CRC[1];
         }
 
-        //
+        //These are the methods used by all functions
         private void GetResponse(byte[] response)
         {
             for (int i = 0; i < response.Length; i++) response[i] = (byte)(serialPort.ReadByte());
