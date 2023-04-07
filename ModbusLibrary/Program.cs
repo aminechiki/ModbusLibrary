@@ -17,10 +17,25 @@ namespace ModbusLibrary
 
             if (state_port)
             {
+                //FC 01 - READ COIL STATUS
+
+
+
+
+                //FC 03 - READ HOLDING REGISTERS
+                
+                /*
                 while (true)
                 {
                     communicationArduino.ReadHoldingRegisters(address, start, registers);
                 }
+                */              
+
+                //FC 05 WRITE SINGLE COIL
+
+                ushort coilAdress = 1;
+                bool stateOutCoil = false;
+                communicationArduino.WriteSingleCoil(address, coilAdress, stateOutCoil);
 
             }
 

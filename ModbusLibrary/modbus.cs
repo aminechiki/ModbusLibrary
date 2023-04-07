@@ -13,13 +13,13 @@ namespace ModbusLibrary
             //Ensure port isn't already opened:
             if (!serialPort.IsOpen)
             {
-                //Assign desired settings to the serial port:
+                //Assign settings to the serial port:
                 serialPort.PortName = portName;
                 serialPort.BaudRate = baudRate;
                 serialPort.DataBits = databits;
                 serialPort.Parity = parity;
                 serialPort.StopBits = stopBits;
-                //These timeouts are default and cannot be editted through the class at this point:
+                //Imposte Timeout:
                 serialPort.ReadTimeout = 1000;
                 serialPort.WriteTimeout = 1000;
 
@@ -37,16 +37,24 @@ namespace ModbusLibrary
             return statePort;
         }
 
+        //FC - 05
         public void ReadHoldingRegisters(byte addressSlave, ushort addressMemoryStartRead, ushort numberRegistersRead)
         {
+            byte[] messageSendSlave = new byte[8];
+            byte typeOfFunction = 3;
+
             //1 - Clear buffer in In and Out of serial Port
             serialPort.DiscardOutBuffer();
             serialPort.DiscardInBuffer();
 
             //2 - Create a message send to slave
-            byte[] messageSendSlave = new byte[8];
-            byte typeOfFunction = 3;
-            BuildMessage(addressSlave, typeOfFunction, addressMemoryStartRead, numberRegistersRead, messageSendSlave);
+            BuildMessageReadHoldingRegisters(addressSlave, typeOfFunction, addressMemoryStartRead, numberRegistersRead, messageSendSlave);
+            
+            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
+            foreach (byte m in messageSendSlave)
+            {
+                Console.WriteLine(m);
+            }         
 
             //3 - Take the response from Slave
             byte[] response = new byte[5 + 2 * numberRegistersRead];
@@ -56,6 +64,11 @@ namespace ModbusLibrary
             {
                 serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
                 GetResponse(response);
+                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                for (int i = 0; i < response.Length; i++)
+                {
+                    if (i == 4) Console.WriteLine(response[i] | response[i - 1] << 8);
+                }
             }
             catch (Exception err)
             {
@@ -63,11 +76,75 @@ namespace ModbusLibrary
             }
         }
 
-        private void BuildMessage(byte address, byte type, ushort start, ushort registers, byte[] message)
+
+
+        public void WriteSingleCoil(byte addressSlave, ushort coilAddress, bool stateOut)
+        {
+            byte typeOfFunction = 5;
+            byte[] messageSendSlave = new byte[8];
+            byte[] responseFromSlave = new byte[8];
+
+            //1 - Build a messagge send to slave
+            BuildMessageWriteSingleCoil(addressSlave, messageSendSlave, typeOfFunction, coilAddress, stateOut);
+            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
+            foreach(byte m in messageSendSlave)
+            {
+                Console.WriteLine(m);
+            }
+
+            try
+            {
+                //2 - Send a messagge to slave
+                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
+                //3 - get respone from slave
+                GetResponse(responseFromSlave);
+                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                foreach (byte m in responseFromSlave)
+                {
+                    Console.WriteLine(m);
+                }
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+            }
+        }
+
+        public void BuildMessageWriteSingleCoil(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, ushort coilAddress, bool stateOut)
         {
             //Array to receive CRC bytes:
             byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function FC05
+            //address Slave
+            messageSendSlave[0] = addressSlave;
+            //type of function
+            messageSendSlave[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[2] = (byte)(coilAddress >> 8);
+            messageSendSlave[3] = (byte)coilAddress;
+            //If stateOut is true send messagge 0xFF then 0x00; this result is divide in two byte
+            if (stateOut)
+            {
+                messageSendSlave[4] = 0xFF;
+                messageSendSlave[5] = 0x00;
+            }
+            else
+            {
+                messageSendSlave[4] = 0x00;
+                messageSendSlave[5] = 0x00;
+            }
 
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(messageSendSlave, CRC);
+            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
+            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+        }
+
+        private void BuildMessageReadHoldingRegisters(byte address, byte type, ushort start, ushort registers, byte[] message)
+        {
+            //Array to receive CRC bytes:
+            byte[] CRC = new byte[2];
+            //Builds the message com eindicated in the modbus protocol for function FC03
             //address Slave
             message[0] = address;
             //type of function
@@ -84,20 +161,11 @@ namespace ModbusLibrary
             message[message.Length - 2] = CRC[0];
             message[message.Length - 1] = CRC[1];
         }
+
+        //
         private void GetResponse(byte[] response)
         {
-            Console.WriteLine("MESSAGGIO RICEVUTO");
-            for (int i = 0; i < response.Length; i++)
-            {
-                response[i] = (byte)(serialPort.ReadByte());
-
-                //recomposes the two bytes into a single 16-bit value
-                if (i == 4)
-                {
-                    int risultato = response[i] | response[i - 1] << 8;
-                    Console.WriteLine(risultato);
-                }
-            }
+            for (int i = 0; i < response.Length; i++) response[i] = (byte)(serialPort.ReadByte());
         }
 
         //Alogirm CRC for find error when trasmition Data with serial communication
