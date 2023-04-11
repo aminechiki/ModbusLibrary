@@ -27,7 +27,12 @@ namespace ModbusLibrary
 
                 ushort coilAdress = 1;
                 bool stateOutCoil = true;
-                communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
+                //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
+
+                short[] value = {77, 45, 87, 0x55 };
+
+
+                communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
 
                 //WRITE REGISTERS
 
