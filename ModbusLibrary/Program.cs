@@ -34,12 +34,14 @@ namespace ModbusLibrary
 
                 //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
 
-                communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
+                //communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
 
                 //WRITE REGISTERS
 
                 //communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
                 //communicationArduino.WriteSingleRegisters(10, 6, 55, 33);
+
+                communicationArduino.WriteMultipleCoil(15, 10, 1, 3);
 
             }
         }
