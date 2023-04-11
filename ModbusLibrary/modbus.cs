@@ -93,28 +93,6 @@ namespace ModbusLibrary
             }
         }
 
-        //method use in function for Build a messagge to send to slave fro read
-        public void seampleBuildMessage(byte addressSlave, byte[] message, byte typeOfFunction, ushort addressMemoryStartRead, ushort numberRegistersRead)
-        {
-            //Array to receive CRC bytes: 
-            byte[] CRC = new byte[2];
-            //- Builds the message com eindicated in the modbus protocol for function
-            //address Slave
-            message[0] = addressSlave;
-            //type of function
-            message[1] = typeOfFunction;
-            //is divided into two bytes the value , the first one shifted by 8
-            message[2] = (byte)(addressMemoryStartRead >> 8);
-            message[3] = (byte)addressMemoryStartRead;
-            //is divided into two bytes the value , the first one shifted by 8
-            message[4] = (byte)(numberRegistersRead >> 8);
-            message[5] = (byte)numberRegistersRead;
-            //CRC - get the CRC with the methd and pot resul in two last position
-            GetCRC(message, CRC);
-            message[message.Length - 2] = CRC[0];
-            message[message.Length - 1] = CRC[1];
-        }
-
         // - FUNCTION FOR WRITE ///////////////////////////////////////////////////////////////////////////////////////////
 
         //FC 05 WRITE SINGLE COIL
@@ -207,9 +185,51 @@ namespace ModbusLibrary
             }
         }
 
-        public void WriteSingleRegister(byte typeOfFunction, byte addressSlave, ushort addressStartWrite, short[] valuesWriteAddress)
+        public void WriteSingleRegister(byte typeOfFunction, byte addressSlave, ushort addressStartWrite, int valuesWriteAddress)
         {
+            byte[] messageSendSlave = new byte[8];
+            byte[] responseFromSlave = new byte[8];
 
+            seampleBuildMessage(addressSlave, messageSendSlave, typeOfFunction, addressStartWrite, (ushort)valuesWriteAddress);
+            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
+            foreach (byte m in messageSendSlave) Console.WriteLine(m);
+
+            //2 - Try to send a messagge to slave
+            try
+            {
+                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
+                //3 - get respone from slave
+                GetResponse(responseFromSlave);
+                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                foreach (byte m in responseFromSlave) Console.WriteLine(m);
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+            }
+
+        }
+
+        //method use in function for Build a messagge to send to slave fro read
+        public void seampleBuildMessage(byte addressSlave, byte[] message, byte typeOfFunction, ushort addressMemoryStartRead, ushort numberRegistersRead)
+        {
+            //Array to receive CRC bytes: 
+            byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function
+            //address Slave
+            message[0] = addressSlave;
+            //type of function
+            message[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            message[2] = (byte)(addressMemoryStartRead >> 8);
+            message[3] = (byte)addressMemoryStartRead;
+            //is divided into two bytes the value , the first one shifted by 8
+            message[4] = (byte)(numberRegistersRead >> 8);
+            message[5] = (byte)numberRegistersRead;
+            //CRC - get the CRC with the methd and pot resul in two last position
+            GetCRC(message, CRC);
+            message[message.Length - 2] = CRC[0];
+            message[message.Length - 1] = CRC[1];
         }
 
         //These are the methods used by all functions

@@ -32,7 +32,9 @@ namespace ModbusLibrary
                 short[] value = {77, 45, 87, 0x55 };
 
 
-                communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
+                //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
+
+                communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
 
                 //WRITE REGISTERS
 
