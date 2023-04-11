@@ -9,8 +9,7 @@ namespace ModbusLibrary
             bool state_port;
 
             modbus communicationArduino = new modbus();
-            state_port = communicationArduino.OpenPort("COM10", 9600, 8, System.IO.Ports.Parity.None, System.IO.Ports.StopBits.One);
-
+            state_port = communicationArduino.OpenPort("COM10", 9600);
 
             if (state_port)
             {
@@ -19,7 +18,7 @@ namespace ModbusLibrary
                 //-address slave
                 //-address start read
                 //-how many address you want to read
-                //communicationArduino.ReadModbus(4, 10, 55 ,6);
+                //communicationArduino.ReadModbus(2, 10, 5 ,1);
 
 
                 // WRITE //
@@ -27,14 +26,22 @@ namespace ModbusLibrary
                 //FC 05 WRITE SINGLE COIL
 
                 ushort coilAdress = 1;
-                bool stateOutCoil = false;
+                bool stateOutCoil = true;
                 //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
 
+                short[] value = {77, 45, 87, 0x55 };
+
+
+                //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
+
+                //communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
 
                 //WRITE REGISTERS
 
-                communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
+                //communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
                 //communicationArduino.WriteSingleRegisters(10, 6, 55, 33);
+
+                communicationArduino.WriteMultipleCoil(15, 10, 1, 3);
 
             }
         }
