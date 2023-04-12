@@ -8,41 +8,36 @@ namespace ModbusLibrary
         {
             bool state_port;
 
-            modbus communicationArduino = new modbus();
+            modbusRtu communicationArduino = new modbusRtu();
             state_port = communicationArduino.OpenPort("COM10", 9600);
 
             if (state_port)
             {
-                //settings for read a register in modbus
-                //-type of function
-                //-address slave
-                //-address start read
-                //-how many address you want to read
-                //communicationArduino.ReadModbus(2, 10, 5 ,1);
+                // - READ
 
+                //fc 01 read coil status
+                //communicationArduino.readModbus(1, 10, 1, 38);
+                //fc 02 read input status
+                //communicationArduino.readModbus(2, 10, 5 ,30);
+                //fc 03 read holding registers
+                communicationArduino.readModbus(3, 10, 50, 4);
+                //fc 04 read input registers
+                //communicationArduino.readModbus(4, 10, 50, 9);
 
-                // WRITE //
+                // - WRITE
 
-                //FC 05 WRITE SINGLE COIL
+                // COIL
+                //fc 05 - write single coil
+                //communicationArduino.writeCoil(5, 10, 1, 0xff00);
+                //fc 15 - write multiple coil
+                //communicationArduino.writeCoil(15, 10, 1, 9, 245);
 
-                ushort coilAdress = 1;
-                bool stateOutCoil = true;
-                //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
-
-                short[] value = {77, 45, 87, 0x55 };
-
-
-                //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
-
-                //communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
-
-                //WRITE REGISTERS
-
-                //communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
-                //communicationArduino.WriteSingleRegisters(10, 6, 55, 33);
-
-                communicationArduino.WriteMultipleCoil(15, 10, 1, 3);
-
+                //REGISTERS
+                int[] value = { 5678, 45, 87, 0x55 };
+                //fc 06 write single register
+                //communicationArduino.writeRegister(6, 10, 50, 345);
+                //fc 16 write multiple registers
+                //communicationArduino.writeRegister(16, 10, 50, value);
             }
         }
     }
