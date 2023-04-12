@@ -8,34 +8,36 @@ namespace ModbusLibrary
         {
             bool state_port;
 
-            modbus communicationArduino = new modbus();
+            modbusRtu communicationArduino = new modbusRtu();
             state_port = communicationArduino.OpenPort("COM10", 9600);
 
             if (state_port)
             {
-                communicationArduino.ReadModbus(2, 10, 5 ,1);
+                // - READ
 
-                // WRITE //
+                //fc 01 read coil status
+                //communicationArduino.readModbus(1, 10, 1, 1);
+                //fc 02 read input status
+                //communicationArduino.readModbus(2, 10, 5 ,1);
+                //fc 03 read holding registers
+                //communicationArduino.readModbus(3, 10, 50, 4);
+                //fc 04 read input registers
+                //communicationArduino.readModbus(4, 10, 50, 5);
 
-                //FC 05 WRITE SINGLE COIL
+                // - WRITE
 
-                ushort coilAdress = 1;
-                bool stateOutCoil = true;
-                //communicationArduino.WriteSingleCoil(10, coilAdress, stateOutCoil);
+                // COIL
+                //fc 05 - write single coil
+                //communicationArduino.writeCoil(5, 10, 1, 0xff00);
+                //fc 15 - write multiple coil
+                //communicationArduino.writeCoil(15, 10, 1, 9, 0);
 
-                short[] value = {77, 45, 87, 0x55 };
-
-
-                //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
-
-
-                //WRITE REGISTERS
-
-                //communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
-                //communicationArduino.WriteSingleRegister(6, 10, 50, 33);
-
-                //communicationArduino.WriteMultipleCoil(15, 10, 1, 6, 255);
-
+                //REGISTERS
+                byte[] value = { 77, 45, 87, 0x55 };
+                //fc 06 write single register
+                //communicationArduino.writeRegister(6, 10, 50, 345);
+                //fc 16 write multiple registers
+                //communicationArduino.writeRegister(16, 10, 50, value);
             }
         }
     }
