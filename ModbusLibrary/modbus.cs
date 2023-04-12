@@ -41,34 +41,55 @@ namespace ModbusLibrary
 
         // - FUNCTION FOR READ 
         // FC 01 - READ COIL STATUS / FC 02 - READ INPUT STATUS / FC 03 READ HOLDING REGISTERS / FC 04 READ INPUT REGISTERS
-        public void readModbus(byte typeOfFunction, byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        public int[] readModbus(byte typeOfFunction, byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
+            int[] valueRead = new int[0];
+
+            int byteCount;
+            int restbyteCount;
             //1 - Clear buffer in In and Out of serial Port
             serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2 - Based onthe type ti function will be set the correct size of the response array
+            serialPort.DiscardInBuffer();      
+            //2 - Find ByteCount
+            byteCount = numberRegistersRead / 8;
+            restbyteCount = numberRegistersRead % 8;
+            if (restbyteCount != 0) byteCount = byteCount + 1;
+            //3 - Based onthe type ti function will be set the correct size of the response array
             switch (typeOfFunction)
             {
-                case 1:
-                    responseFromSlave = new byte[5 + numberRegistersRead];
-                    break;
-                case 2:
+                case 1: case 2:               
                     //read inputs are bits that are written in bytes, so for every 8 bits you want
                     //to read the slave will respond to you with a response byte, if the bits you
                     //want to read are less than 8 then you will put 1 by default
-                    int byteCount = numberRegistersRead / 8;
-                    int restbyteCount = numberRegistersRead % 8;
-                    if (restbyteCount != 0) byteCount = byteCount + 1;
                     responseFromSlave = new byte[5 + byteCount];
+                    SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+                    valueRead = new int[byteCount];
+                    for (int i = 0; i < byteCount; i++) valueRead[i] = responseFromSlave[3 + i];
                     break;
                 case 3: case 4:             
                     responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-                    break;
+                    valueRead = new int[numberRegistersRead];
+                    SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+                    byte incremento = 0;
+                    for (int i = 0; i < responseFromSlave[2]; i++)
+                    {
+                        if((3 + i) % 2 == 0)
+                        {
+
+                            valueRead[incremento] = responseFromSlave[3 + i] | responseFromSlave[3 + i + 1] << 8; 
+                            incremento++;
+                        }
+
+                        //valueRead[i] = responseFromSlave[3 + i];
+
+                    }
+
+                    valueRead = new int[numberRegistersRead];                  
+                    break;                                
             }
-            //3 - Send PDU to slave
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+            return valueRead;
         }
 
         // - FUNCTION FOR WRITE 
@@ -121,7 +142,7 @@ namespace ModbusLibrary
         }
 
         //FC 16 - WRITE MULTIPLE REGISTERS
-        public void writeRegister(byte typeOfFunction, byte addressSlave, byte addressStartWrite, byte[] valuesWriteAddress)
+        public void writeRegister(byte typeOfFunction, byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
         {
                 //Take the numbers of register do you want write
                 byte numberRegistersWrite = (byte)valuesWriteAddress.Length;
@@ -149,14 +170,14 @@ namespace ModbusLibrary
         private void SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
         {
             buildPdu(addressSlave, messageSendSlave, typeOfFunction, startWriteAddress, numberRegisters);
-
-            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
+            
+            Console.WriteLine("MESSAGGIO INVIATO");
             foreach (byte m in messageSendSlave) Console.WriteLine(m);
             try
             {
                 serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
                 GetResponse(responseFromSlave);
-                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
+                Console.WriteLine("MESSAGGIO RICEVUTO");
                 foreach (byte m in responseFromSlave) Console.WriteLine(m);
             }
             catch (Exception err)
