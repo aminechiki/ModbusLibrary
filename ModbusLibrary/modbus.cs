@@ -42,6 +42,10 @@ namespace ModbusLibrary
         {
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
+            //2 - Clear buffer in In and Out of serial Port
+            serialPort.DiscardOutBuffer();
+            serialPort.DiscardInBuffer();
+
             //1 - based onthe type ti function will be set the correct size of the response array
             switch (typeOfFunction)
             {
@@ -52,24 +56,19 @@ namespace ModbusLibrary
                     //read inputs are bits that are written in bytes, so for every 8 bits you want
                     //to read the slave will respond to you with a response byte, if the bits you
                     //want to read are less than 8 then you will put 1 by default
-
                     int byteCount = numberRegistersRead / 8;
                     int restbyteCount = numberRegistersRead % 8;
                     if (restbyteCount != 0) byteCount = byteCount + 1;
-
                     responseFromSlave = new byte[5 + byteCount];
                     break;
-                case 3:
+                case 3: case 4:             
                     responseFromSlave = new byte[5 + 2 * numberRegistersRead];
                     break;
-                case 4:
-                    responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-                    break;
-            }         
-            //2 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
+            }
+
+            sendMessagge(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             //3 - Create a message send to slave
+            /*
             BuildMessage(addressSlave, messageSendSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             Console.WriteLine("FC 01 - MESSAGGIO INVIATO");
             foreach (byte m in messageSendSlave)
@@ -94,6 +93,7 @@ namespace ModbusLibrary
             {
                 Console.WriteLine(err);
             }
+            */
         }
 
         // - FUNCTION FOR WRITE ///////////////////////////////////////////////////////////////////////////////////////////
@@ -110,8 +110,7 @@ namespace ModbusLibrary
             foreach(byte m in messageSendSlave) Console.WriteLine(m);
             //2 - Try to send a messagge to slave
             try
-            {
-                
+            {               
                 serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
                 //3 - get respone from slave
                 GetResponse(responseFromSlave);
@@ -154,39 +153,30 @@ namespace ModbusLibrary
         }
 
         //FC 15 - WRITE MULTIPLE COILS
-        public void WriteMultipleCoil(byte typeOfFunction, byte addressSlave, ushort startWriteAddress, ushort numberRegisters)
+        public void WriteMultipleCoil(byte typeOfFunction, byte addressSlave, ushort startWriteAddress, ushort numberRegisters, int bitWriteMultipleCoils)
         {
-            //IL FUNZIONAMENTO DIPENDE DALLA DIMENSIONE DELL'ARRAY E ANCHE DALL FATTO CHE numberRegisters SUPERI 8 CIOè UN BIT
-
-            //sizeMessageSendSlave > 8 
-            byte[] messageSendSlave = new byte[10];
             byte[] responseFromSlave = new byte[8];
+            byte[] messageSendSlave = new byte[0];
+  
+            if (numberRegisters > 8)
+            {
+                messageSendSlave = new byte[11];
+                messageSendSlave[7] = (byte)(bitWriteMultipleCoils >> 8);
+                messageSendSlave[8] = (byte)bitWriteMultipleCoils;
+            }
+            if (numberRegisters <= 8)
+            {
+                messageSendSlave = new byte[10];
+                messageSendSlave[7] = (byte)bitWriteMultipleCoils;
+            }
+
+            //Byte count
             int byteCount = numberRegisters / 8;       
             int restbyteCount = numberRegisters % 8;
             if (restbyteCount != 0) byteCount = byteCount + 1;
             messageSendSlave[6] = (byte)byteCount;
 
-            int num = 233;
-            //messageSendSlave[7] = (byte)(num >> 8);
-            messageSendSlave[7] = (byte)num;
-
-            BuildMessage(addressSlave, messageSendSlave, typeOfFunction, startWriteAddress, numberRegisters);
-
-            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
-            foreach (byte m in messageSendSlave) Console.WriteLine(m);
-            //2 - Try to send a messagge to slave
-            try
-            {
-                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                //3 - get respone from slave
-                GetResponse(responseFromSlave);
-                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
-                foreach (byte m in responseFromSlave) Console.WriteLine(m);
-            }
-            catch (Exception err)
-            {
-                Console.WriteLine(err);
-            }
+            sendMessagge(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, startWriteAddress, numberRegisters);
         }
 
         //FC 06 - WRITE SINGLE REGISTERS
@@ -194,24 +184,7 @@ namespace ModbusLibrary
         {
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[8];
-
-            BuildMessage(addressSlave, messageSendSlave, typeOfFunction, addressStartWrite, (ushort)valuesWriteAddress);
-            Console.WriteLine("FC05 - MESSAGGIO INVIATO");
-            foreach (byte m in messageSendSlave) Console.WriteLine(m);
-
-            //2 - Try to send a messagge to slave
-            try
-            {
-                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                //3 - get respone from slave
-                GetResponse(responseFromSlave);
-                Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
-                foreach (byte m in responseFromSlave) Console.WriteLine(m);
-            }
-            catch (Exception err)
-            {
-                Console.WriteLine(err);
-            }
+            sendMessagge(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, (ushort)valuesWriteAddress);
         }
 
         //FC 16 - WRITE MULTIPLE REGISTERS
@@ -231,14 +204,19 @@ namespace ModbusLibrary
                 messageSendSlave[8 + 2 * i] = (byte)(valuesWriteAddress[i]);
             }
 
-            BuildMessage(addressSlave, messageSendSlave, typeOfFunction, addressStartWrite, (ushort)numberRegistersWrite);
+            sendMessagge(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, (ushort)numberRegistersWrite);
+        }
+
+        //method use inside a function for send to send pdu to slave 
+        private void sendMessagge(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, ushort startWriteAddress, ushort numberRegisters)
+        {
+            BuildMessage(addressSlave, messageSendSlave, typeOfFunction, startWriteAddress, numberRegisters);
+
             Console.WriteLine("FC05 - MESSAGGIO INVIATO");
             foreach (byte m in messageSendSlave) Console.WriteLine(m);
-            //2 - Try to send a messagge to slave
             try
             {
                 serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                //3 - get respone from slave
                 GetResponse(responseFromSlave);
                 Console.WriteLine("FC05 - MESSAGGIO RICEVUTO");
                 foreach (byte m in responseFromSlave) Console.WriteLine(m);
@@ -250,7 +228,7 @@ namespace ModbusLibrary
         }
 
         //method use in function for Build a messagge to send to slave fro read
-        public void BuildMessage(byte addressSlave, byte[] message, byte typeOfFunction, ushort addressMemoryStartRead, ushort numberRegistersRead)
+        private void BuildMessage(byte addressSlave, byte[] message, byte typeOfFunction, ushort addressMemoryStartRead, ushort numberRegistersRead)
         {
             //Array to receive CRC bytes: 
             byte[] CRC = new byte[2];

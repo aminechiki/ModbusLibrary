@@ -13,13 +13,7 @@ namespace ModbusLibrary
 
             if (state_port)
             {
-                //settings for read a register in modbus
-                //-type of function
-                //-address slave
-                //-address start read
-                //-how many address you want to read
-                //communicationArduino.ReadModbus(2, 10, 5 ,1);
-
+                communicationArduino.ReadModbus(2, 10, 5 ,1);
 
                 // WRITE //
 
@@ -34,14 +28,13 @@ namespace ModbusLibrary
 
                 //communicationArduino.WriteMultipleRegisters(16, 10, 50, value);
 
-                //communicationArduino.WriteSingleRegister(6, 10, 50, 6789);
 
                 //WRITE REGISTERS
 
                 //communicationArduino.WriteMultipleCoils(10, 15, 1, 1);
-                //communicationArduino.WriteSingleRegisters(10, 6, 55, 33);
+                //communicationArduino.WriteSingleRegister(6, 10, 50, 33);
 
-                communicationArduino.WriteMultipleCoil(15, 10, 1, 3);
+                //communicationArduino.WriteMultipleCoil(15, 10, 1, 6, 255);
 
             }
         }
