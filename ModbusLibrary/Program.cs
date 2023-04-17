@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModbusLibrary
 {
@@ -13,31 +14,44 @@ namespace ModbusLibrary
 
             if (state_port)
             {
-                // - READ
+                // READ
+                Dictionary<int, int> coilStatus = new Dictionary<int, int>();
+                List<int> inputStatus = new List<int>();
+                Dictionary<int, int> holdingRegisters = new Dictionary<int, int>();
+                Dictionary<int, int> inputRegisters = new Dictionary<int, int>();
 
-                //fc 01 read coil status
-                //communicationArduino.readModbus(1, 10, 1, 38);
+                //FC 01 read coil status
+                coilStatus = communicationArduino.readCoilStatus(10, 1, 37);
                 //fc 02 read input status
-                //communicationArduino.readModbus(2, 10, 5 ,30);
+                //inputStatus = communicationArduino.readInputStatus(10, 5, 1);
                 //fc 03 read holding registers
-                communicationArduino.readModbus(3, 10, 50, 4);
+                //holdingRegisters = communicationArduino.readHoldingRegisters(10, 55, 4);
                 //fc 04 read input registers
-                //communicationArduino.readModbus(4, 10, 50, 9);
+                //inputRegisters = communicationArduino.readInputRegisters(10, 50, 10);
+
+                //DICTIONARY
+                foreach (KeyValuePair<int, int> i in inputRegisters) Console.WriteLine(i);
+
+                //LIST
+                foreach (int i in coilStatus) Console.WriteLine(i);
 
                 // - WRITE
+                int[] valueMultipleRegisters = { 33, 44, 55, 66 };
 
-                // COIL
                 //fc 05 - write single coil
-                //communicationArduino.writeCoil(5, 10, 1, 0xff00);
+                //communicationArduino.writeSingleCoil(10, 1, true);
                 //fc 15 - write multiple coil
-                //communicationArduino.writeCoil(15, 10, 1, 9, 245);
+                communicationArduino.writeMultipleCoil(10, 1, 16, 65535); //65535  //tecnicamente si potrebbe togliere il fatto che si voglisa scrivere un toto di registri
+                //fc 06 - write single register
+                //communicationArduino.writeSingleRegister(10, 55, 199);
+                //fc 16 - write multiple registers
+                //communicationArduino.writeMultipleRegisters(10, 55, valueMultipleRegisters);
 
-                //REGISTERS
-                int[] value = { 5678, 45, 87, 0x55 };
-                //fc 06 write single register
-                //communicationArduino.writeRegister(6, 10, 50, 345);
-                //fc 16 write multiple registers
-                //communicationArduino.writeRegister(16, 10, 50, value);
+
+
+
+                //communicationArduino.decimalToBinary(255);
+
             }
         }
     }
