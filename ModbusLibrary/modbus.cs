@@ -7,6 +7,9 @@ namespace ModbusLibrary
     class modbusRtu
     {
         private SerialPort serialPort = new SerialPort();
+        ///<summary>
+        ///<para>Open the communication with serial port</para>
+        ///</summary>
         public bool OpenPort(string portName, int baudRate)
         {
             bool statePort = false;
@@ -39,12 +42,46 @@ namespace ModbusLibrary
             }
             return statePort;
         }
-
-        // - FUNCTION FOR READ
         // FC 01 - READ COIL STATUS
         public Dictionary<int, int> readCoilStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 1;
+            byte[] messageSendSlave = new byte[8];
+            byte[] responseFromSlave = new byte[0];
+            Dictionary<int, int> valueRead = new Dictionary<int, int>();
+            int byteCount;
+            int restbyteCount;
+            //1 - Clear buffer in In and Out of serial Port
+            serialPort.DiscardOutBuffer();
+            serialPort.DiscardInBuffer();
+            //2 - Find ByteCount
+            byteCount = numberRegistersRead / 8;
+            restbyteCount = numberRegistersRead % 8;
+            if (restbyteCount != 0) byteCount = byteCount + 1;
+            //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes,
+            //so for every 8 bits you want to read the slave will respond to you with a response byte, if the bits you want to read are less than
+            //8 then you will put 1 by default.
+            responseFromSlave = new byte[5 + byteCount];
+            //4 - Send Pdu
+            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+            //5 - Take the value read
+            for (int i = 0; i < byteCount; i++)
+            {
+                string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2).PadLeft(8, '0');
+
+                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
+                for (int j = 0; j < binaryByteRead.Length; j++)
+                {                 
+                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
+                    addressStartRead++;
+                }
+            }          
+            return valueRead;
+        }
+        // FC 02 - READ INPUT STATUS
+        public Dictionary<int, int> readDiscreteInputs(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        {
+            byte typeOfFunction = 2;
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
@@ -67,52 +104,15 @@ namespace ModbusLibrary
             //5 - Take the value read
             for (int i = 0; i < byteCount; i++)
             {
-                //valueRead.Add(responseFromSlave[3 + i]);
-                string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2);
-                char f;
+                string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2).PadLeft(8, '0');
 
+                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
                 for (int j = 0; j < binaryByteRead.Length; j++)
                 {
-                    f = binaryByteRead[j];                     
-                    int.Parse(f.ToString());
-
-
-
+                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
                     addressStartRead++;
                 }
             }
-
-            decimalToBinary(5);
-            //6 - Binary
-
-
-            return valueRead;
-        }
-        // FC 02 - READ INPUT STATUS
-        public List<int> readInputStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
-        {
-            byte typeOfFunction = 2;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            List<int> valueRead = new List<int>();
-            int byteCount;
-            int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            //read inputs are bits that are written in bytes, so for every 8 bits you want
-            //to read the slave will respond to you with a response byte, if the bits you
-            //want to read are less than 8 then you will put 1 by default
-            responseFromSlave = new byte[5 + byteCount];
-            //4 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            //5 - Take the value read
-            for (int i = 0; i < byteCount; i++) valueRead.Add(responseFromSlave[3 + i]);
             return valueRead;
         }
         // FC 03 READ HOLDING REGISTERS
@@ -179,8 +179,6 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-
-        // - FUNCTION FOR WRITE 
         //FC 05 - WRITE SINGLE COIL
         public bool writeSingleCoil(byte addressSlave, byte addressStartWrite, bool stateCoil)
         {
@@ -241,9 +239,7 @@ namespace ModbusLibrary
             }
             return checkResponse;
         }
-
         //FC 06 - WRITE SINGLE REGISTERS
-        //Ovveride method
         public bool writeSingleRegister(byte addressSlave, byte addressStartWrite, int valuesWriteAddress)
         {
             byte typeOfFunction = 6;
@@ -264,7 +260,6 @@ namespace ModbusLibrary
             }
             return checkResponse;
         }
-
         //FC 16 - WRITE MULTIPLE REGISTERS
         public bool writeMultipleRegisters(byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
         {
@@ -294,10 +289,7 @@ namespace ModbusLibrary
             }
             return checkResponse;
         }
-
-        // - METHOD USE IN ALL APPLICATION
-
-        //method use inside a function for send to send pdu to slave 
+        //method use inside a function for send to send pdu to slave
         private void SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
         {
             buildPdu(addressSlave, messageSendSlave, typeOfFunction, startWriteAddress, numberRegisters);
@@ -315,7 +307,6 @@ namespace ModbusLibrary
                 Console.WriteLine(err);
             }
         }
-
         //method for Build a messagge to send to slave fro read
         private void buildPdu(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
         {
@@ -337,13 +328,11 @@ namespace ModbusLibrary
             messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
             messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
         }
-
         //These are the methods used by all functions
         private void GetResponse(byte[] response)
         {
             for (int i = 0; i < response.Length; i++) response[i] = (byte)(serialPort.ReadByte());
         }
-
         //Alogirm CRC for find error when trasmition Data with serial communication
         private void GetCRC(byte[] message, byte[] CRC)
         {
@@ -376,15 +365,8 @@ namespace ModbusLibrary
             CRC[0] = (byte)crcFull;
         }
 
-        public void decimalToBinary(int decimalNumber)
-        {
-            string binary = Convert.ToString(255, 2);
-
-            Console.WriteLine(binary);
-        }
-
-        /// //-------------------------------------------------------------------------------------------------------------------
-
+        // -------------------------------------------------------------------------------------------------------------------
+        /// VECCHIO METODO GENERALE PER LA LETTURA E SCRITTURA
         /*
 
         // FC 01 - READ COIL STATUS / FC 02 - READ INPUT STATUS / FC 03 READ HOLDING REGISTERS / FC 04 READ INPUT REGISTERS
