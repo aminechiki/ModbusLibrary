@@ -10,6 +10,7 @@ namespace ModbusLibrary
         ///<summary>
         ///<para>Open the communication with serial port</para>
         ///</summary>
+        ///<returns>return true if open communication with slave</returns>
         public bool OpenPort(string portName, int baudRate)
         {
             bool statePort = false;
@@ -42,7 +43,10 @@ namespace ModbusLibrary
             }
             return statePort;
         }
-        // FC 01 - READ COIL STATUS
+        ///<summary>
+        ///<para>fc 01 - Read Coil Status</para>
+        ///</summary>
+        ///<returns>return ...</returns>
         public Dictionary<int, int> readCoilStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 1;
@@ -71,14 +75,17 @@ namespace ModbusLibrary
 
                 //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
                 for (int j = 0; j < binaryByteRead.Length; j++)
-                {                 
+                {
                     valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
                     addressStartRead++;
                 }
-            }          
+            }
             return valueRead;
         }
-        // FC 02 - READ INPUT STATUS
+        ///<summary>
+        ///<para>fc 02 - Read Discrete Inputs</para>
+        ///</summary>
+        ///<returns>return ...</returns>
         public Dictionary<int, int> readDiscreteInputs(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 2;
@@ -94,10 +101,8 @@ namespace ModbusLibrary
             byteCount = numberRegistersRead / 8;
             restbyteCount = numberRegistersRead % 8;
             if (restbyteCount != 0) byteCount = byteCount + 1;
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            //read inputs are bits that are written in bytes, so for every 8 bits you want
-            //to read the slave will respond to you with a response byte, if the bits you
-            //want to read are less than 8 then you will put 1 by default
+            //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes, so for every 8 bits you want
+            //to read the slave will respond to you with a response byte, if the bits you want to read are less than 8 then you will put 1 by default
             responseFromSlave = new byte[5 + byteCount];
             //4 - Send Pdu
             SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
@@ -105,7 +110,6 @@ namespace ModbusLibrary
             for (int i = 0; i < byteCount; i++)
             {
                 string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2).PadLeft(8, '0');
-
                 //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
                 for (int j = 0; j < binaryByteRead.Length; j++)
                 {
@@ -115,7 +119,10 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-        // FC 03 READ HOLDING REGISTERS
+        ///<summary>
+        ///<para>fc 03 - Read Holding Register</para>
+        ///</summary>
+        ///<returns>return ...</returns>
         public Dictionary<int, int> readHoldingRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 3;
@@ -147,7 +154,10 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-        // FC 04 READ INPUT REGISTERS
+        ///<summary>
+        ///<para>fc 04 - Read Input Register</para>
+        ///</summary>
+        ///<returns>return ...</returns>
         public Dictionary<int, int> readInputRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 3;
@@ -179,7 +189,10 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-        //FC 05 - WRITE SINGLE COIL
+        ///<summary>
+        ///<para>fc 05 - Write Single Coil</para>
+        ///</summary>
+        ///<returns>return ...</returns
         public bool writeSingleCoil(byte addressSlave, byte addressStartWrite, bool stateCoil)
         {
             byte typeOfFunction = 5;
@@ -203,43 +216,10 @@ namespace ModbusLibrary
             }
             return checkResponse;
         }
-        //FC 15 - WRITE MULTIPLE COIL
-        public bool writeMultipleCoil(byte addressSlave, byte addressStartWrite, int numberRegisters, long bitWriteMultipleCoils)
-        {
-            byte typeOfFunction = 15;
-            bool checkResponse = true;
-            byte[] messageSendSlave = new byte[0];
-            byte[] responseFromSlave = new byte[8];
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2 - Based onthe type ti function will be set the correct size of the response array
-            if (numberRegisters > 8)
-            {
-                messageSendSlave = new byte[11];
-                messageSendSlave[7] = (byte)(bitWriteMultipleCoils >> 8);
-                messageSendSlave[8] = (byte)bitWriteMultipleCoils;
-            }
-            if (numberRegisters <= 8)
-            {
-                messageSendSlave = new byte[10];
-                messageSendSlave[7] = (byte)bitWriteMultipleCoils;
-            }
-            //Byte count
-            int byteCount = numberRegisters / 8;
-            int restbyteCount = numberRegisters % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            messageSendSlave[6] = (byte)byteCount;
-            //3 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-            //4 - Check response 
-            for (int i = 0; i < responseFromSlave.Length - 2; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
-        }
-        //FC 06 - WRITE SINGLE REGISTERS
+        ///<summary>
+        ///<para>fc 06 -Write Single Register</para>
+        ///</summary>
+        ///<returns>return ...</returns>
         public bool writeSingleRegister(byte addressSlave, byte addressStartWrite, int valuesWriteAddress)
         {
             byte typeOfFunction = 6;
@@ -260,7 +240,51 @@ namespace ModbusLibrary
             }
             return checkResponse;
         }
-        //FC 16 - WRITE MULTIPLE REGISTERS
+        ///<summary>
+        ///<para>fc 15 - Write Multiple Coils</para>
+        ///</summary>
+        ///<returns>return ...</returns>
+        ///
+        public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
+        {
+            byte typeOfFunction = 15;
+            bool checkResponse = true;
+            byte[] messageSendSlave = new byte[0];
+            byte[] responseFromSlave = new byte[8];
+            //1 - Clear buffer in In and Out of serial Port
+            serialPort.DiscardOutBuffer();
+            serialPort.DiscardInBuffer();
+            int numberRegisters = 0;
+            //2 - Find numberRegisters
+            while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
+            //3 - Based onthe type ti function will be set the correct size of the response array
+            if (numberRegisters > 8)
+            {
+                messageSendSlave = new byte[11];
+                messageSendSlave[7] = (byte)(valuesWriteAddress >> 8);
+                messageSendSlave[8] = (byte)valuesWriteAddress;
+            }
+            if (numberRegisters <= 8)
+            {
+                messageSendSlave = new byte[10];
+                messageSendSlave[7] = (byte)valuesWriteAddress;
+            }
+            //Byte count
+            int byteCount = numberRegisters / 8;
+            int restbyteCount = numberRegisters % 8;
+            if (restbyteCount != 0) byteCount = byteCount + 1;
+            messageSendSlave[6] = (byte)byteCount;
+            //4 - Send Pdu
+            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
+            //5 - Check response 
+            for (int i = 0; i < responseFromSlave.Length - 2; i++) if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
+            return checkResponse;
+        }
+        ///<summary>
+        ///<para>fc 16 - Write Multiple Registers</para>
+        ///</summary>
+        ///<returns>return ...</returns>
+        ///
         public bool writeMultipleRegisters(byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
         {
             byte typeOfFunction = 16;

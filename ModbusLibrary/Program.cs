@@ -23,7 +23,7 @@ namespace ModbusLibrary
                 //FC 01 read coil status
                 //coilStatus = communicationArduino.readCoilStatus(10, 1, 37);
                 //fc 02 read input status
-                //inputStatus = communicationArduino.readDiscreteInputs(10, 5, 10);
+                //inputStatus = communicationArduino.readDiscreteInputs(10, 2, 10);
                 //fc 03 read holding registers
                 //holdingRegisters = communicationArduino.readHoldingRegisters(10, 55, 4);
                 //fc 04 read input registers
@@ -35,7 +35,7 @@ namespace ModbusLibrary
                 //fc 05 - write single coil
                 //communicationArduino.writeSingleCoil(10, 1, true);
                 //fc 15 - write multiple coil
-                //communicationArduino.writeMultipleCoil(10, 1, 16, 53509); //65535  //tecnicamente si potrebbe togliere il fatto che si voglisa scrivere un toto di registri
+                communicationArduino.writeMultipleCoils(10, 1, 53509); //65535  //tecnicamente si potrebbe togliere il fatto che si voglisa scrivere un toto di registri
                 //fc 06 - write single register
                 //communicationArduino.writeSingleRegister(10, 55, 199);
                 //fc 16 - write multiple registers
