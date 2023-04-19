@@ -49,9 +49,12 @@ namespace ModbusLibrary
             //WRITE
             //fc 05 - write single coil
             //deviceTcp.writeSingleCoil(1, 00120, true);
+            //fc 15 - write multiple coil
+            deviceTcp.writeMultipleCoils(1, 00120, 0);
             //fc 06 - write single register
-            deviceTcp.writeSingleRegister(1, 00120, 244);
-
+            //deviceTcp.writeSingleRegister(1, 00120, 20000);
+            //fc 16 - write multiple registers
+            //deviceTcp.writeMultipleRegisters(1, 00120, valueMultipleRegisters);
 
         }
     }
