@@ -236,6 +236,11 @@ namespace ModbusLibrary
         ///
         public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
         {
+            // BISOGNA DARE UNA SISTEMATA A numberRegisters PERCHE NON LAVORA CORRETAMENTE
+            //NON SETTA COPRRRETEAMENTE I REGISTRI
+
+
+
             byte typeOfFunction = 15;
             bool checkResponse = true;
             byte[] messageSendSlave = new byte[0];

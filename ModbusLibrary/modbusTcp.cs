@@ -27,7 +27,6 @@ namespace ModbusLibrary
                 socket.SendTimeout = 1000;
             }
         }
-
         //fc 01
         public Dictionary<int, int> readCoilStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
@@ -168,6 +167,74 @@ namespace ModbusLibrary
             responseFromSlave = sendPdu(addressSlave, typeOfFunction, messageSendSlave, responseFromSlave, addressStartWrite, valuesWriteAddress);
 
             return checkResponse;
+
+        }
+        //fc 15
+        public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
+        {
+            byte typeOfFunction = 15;
+            bool checkResponse = true;
+            byte[] messageSendSlave = new byte[0];
+            byte[] responseFromSlave = new byte[0];
+            int numberRegisters = 1;
+            //2 - Find numberRegisters
+            while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
+            //3 - Based onthe type ti function will be set the correct size of the response array
+            if (numberRegisters > 8)
+            {
+                messageSendSlave = new byte[9];
+                messageSendSlave[7] = (byte)(valuesWriteAddress >> 8);
+                messageSendSlave[8] = (byte)valuesWriteAddress;
+            }
+            if (numberRegisters <= 8)
+            {
+                messageSendSlave = new byte[8];
+                messageSendSlave[7] = (byte)valuesWriteAddress;
+            }
+            //Byte count
+            int byteCount = numberRegisters / 8;
+            int restbyteCount = numberRegisters % 8;
+            if (restbyteCount != 0) byteCount = byteCount + 1;
+            messageSendSlave[6] = (byte)byteCount;
+            //4 - Send Pdu
+            //responseFromSlave = sendPdu(addressSlave, typeOfFunction, messageSendSlave, responseFromSlave, addressStartWrite, numberRegisters);
+
+            messageSendSlave[0] = addressSlave;
+            messageSendSlave[1] = typeOfFunction;
+            messageSendSlave[2] = (byte)(addressStartWrite >> 8);
+            messageSendSlave[3] = (byte)addressStartWrite;
+            messageSendSlave[4] = (byte)(numberRegisters >> 8);
+            messageSendSlave[5] = (byte)numberRegisters;
+
+            byte[] mbapSendSlave = makeMBAP((ushort)messageSendSlave.Count());
+            //Forma l'ADU unendo MBAP alla PDU
+            messageSendSlave = mbapSendSlave.Concat(messageSendSlave).ToArray();
+
+            socket.Send(messageSendSlave);
+            responseFromSlave = GetResponse(responseFromSlave);
+
+
+
+            return checkResponse;
+        }
+        //fc 16 
+        public bool writeMultipleRegisters(byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
+        {
+            byte typeOfFunction = 16;
+            bool checkResponse = true;
+            //Take the numbers of register do you want write
+            byte numberRegistersWrite = (byte)valuesWriteAddress.Length;
+            byte[] messageSendSlave = new byte[9 + 2 * numberRegistersWrite];
+            byte[] responseFromSlave = new byte[8];
+
+            //3 - Send Pdu
+            responseFromSlave = sendPdu(addressSlave, typeOfFunction, messageSendSlave, responseFromSlave, addressStartWrite, numberRegistersWrite, valuesWriteAddress);
+            //4 - Check response 
+            for (int i = 0; i < responseFromSlave.Length - 2; i++)
+            {
+                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
+            }
+            return checkResponse;
         }
         public Dictionary<int, int> orderAddressValueRead(byte numberByteResponse ,byte startReadByte, byte addressStartRead, byte[] responseFromSlave)
         {
@@ -188,6 +255,32 @@ namespace ModbusLibrary
         public byte[] sendPdu(byte addressSlave, byte typeOfFunction, byte[] messageSendSlave, byte[] responseFromSlave, byte addressStartRead, int numberRegisterRead)
         {
             byte[] pdu = buildPdu(addressSlave, typeOfFunction, addressStartRead, numberRegisterRead);
+            byte[] mbapSendSlave = makeMBAP((ushort)pdu.Count());
+            //Forma l'ADU unendo MBAP alla PDU
+            messageSendSlave = mbapSendSlave.Concat(pdu).ToArray();
+
+            socket.Send(messageSendSlave);
+            responseFromSlave = GetResponse(responseFromSlave);
+
+            return responseFromSlave;
+        }
+        public byte[] sendPdu(byte addressSlave, byte typeOfFunction, byte[] messageSendSlave, byte[] responseFromSlave, byte addressStartRead, int numberRegisterRead, int[] valuesWriteAddress)
+        {
+            byte[] pdu = buildPdu(addressSlave, typeOfFunction, addressStartRead, numberRegisterRead);
+
+            byte[] pduExtension = new byte[(valuesWriteAddress.Length * 2) + 1];
+            pduExtension[0] = (byte)(valuesWriteAddress.Length * 2);
+
+            int i = 1;
+            foreach (int item in valuesWriteAddress)
+            {
+                pduExtension[i] = (byte)(item >> 8);
+                pduExtension[i + 1] = (byte)item;
+                i += 2;
+            }
+
+            pdu = pdu.Concat(pduExtension).ToArray();
+
             byte[] mbapSendSlave = makeMBAP((ushort)pdu.Count());
             //Forma l'ADU unendo MBAP alla PDU
             messageSendSlave = mbapSendSlave.Concat(pdu).ToArray();
