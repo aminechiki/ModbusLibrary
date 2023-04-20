@@ -7,7 +7,6 @@ namespace ModbusLibrary
     class modbusRtu
     {
         private SerialPort serialPort = new SerialPort();
-
         public modbusRtu(string portName, int baudRate)
         {
             //Ensure port isn't already opened:
@@ -44,9 +43,6 @@ namespace ModbusLibrary
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - Find ByteCount
             byteCount = numberRegistersRead / 8;
             restbyteCount = numberRegistersRead % 8;
@@ -83,9 +79,6 @@ namespace ModbusLibrary
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - Find ByteCount
             byteCount = numberRegistersRead / 8;
             restbyteCount = numberRegistersRead % 8;
@@ -120,9 +113,6 @@ namespace ModbusLibrary
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - Find ByteCount
             byteCount = numberRegistersRead / 8;
             restbyteCount = numberRegistersRead % 8;
@@ -155,9 +145,6 @@ namespace ModbusLibrary
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - Find ByteCount
             byteCount = numberRegistersRead / 8;
             restbyteCount = numberRegistersRead % 8;
@@ -189,9 +176,6 @@ namespace ModbusLibrary
             byte[] responseFromSlave = new byte[8];
             bool checkResponse = true;
             int numberRegisters = 0;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - if stateCoil is true numberRegisters is equal 0xFF00
             if (stateCoil) numberRegisters = 0xFF00;
             if (!stateCoil) numberRegisters = 0x0000;
@@ -215,9 +199,6 @@ namespace ModbusLibrary
             bool checkResponse = true;
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[8];
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2- Send Pdu
             SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
 
@@ -236,21 +217,17 @@ namespace ModbusLibrary
         ///
         public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
         {
-            // BISOGNA DARE UNA SISTEMATA A numberRegisters PERCHE NON LAVORA CORRETAMENTE
-            //NON SETTA COPRRRETEAMENTE I REGISTRI
-
-
-
             byte typeOfFunction = 15;
             bool checkResponse = true;
             byte[] messageSendSlave = new byte[0];
             byte[] responseFromSlave = new byte[8];
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             int numberRegisters = 0;
             //2 - Find numberRegisters
-            while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
+            //while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
+            string valuesWriteAddressToBit = Convert.ToString(valuesWriteAddress, 2);
+            numberRegisters = valuesWriteAddressToBit.Length;
+
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             if (numberRegisters > 8)
             {
@@ -289,9 +266,6 @@ namespace ModbusLibrary
             byte[] responseFromSlave = new byte[8];
             //Add bytecount to message:
             messageSendSlave[6] = (byte)(numberRegistersWrite * 2);
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
             //2 - Put write values into message prior to sending:
             for (int i = 0; i < numberRegistersWrite; i++)
             {

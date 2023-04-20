@@ -11,7 +11,7 @@ namespace ModbusLibrary
             Dictionary<int, int> holdingRegisters = new Dictionary<int, int>();
             Dictionary<int, int> inputRegisters = new Dictionary<int, int>();
 
-            modbusRtu deviceRtu = new modbusRtu("COM10", 9600);
+            //modbusRtu deviceRtu = new modbusRtu("COM10", 9600);
             // - READ
             //FC 01 read coil status
             //coilStatus = deviceRtu.readCoilStatus(10, 1, 37);
@@ -50,7 +50,7 @@ namespace ModbusLibrary
             //fc 05 - write single coil
             //deviceTcp.writeSingleCoil(1, 00120, true);
             //fc 15 - write multiple coil
-            deviceTcp.writeMultipleCoils(1, 00120, 0);
+            deviceTcp.writeMultipleCoils(1, 00120, 255);
             //fc 06 - write single register
             //deviceTcp.writeSingleRegister(1, 00120, 20000);
             //fc 16 - write multiple registers

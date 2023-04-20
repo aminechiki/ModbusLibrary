@@ -176,9 +176,11 @@ namespace ModbusLibrary
             bool checkResponse = true;
             byte[] messageSendSlave = new byte[0];
             byte[] responseFromSlave = new byte[0];
-            int numberRegisters = 1;
-            //2 - Find numberRegisters
-            while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
+            int numberRegisters = 0;
+            //2 - Find numberRegisters            
+            string valuesWriteAddressToBit = Convert.ToString(valuesWriteAddress, 2);
+            numberRegisters = valuesWriteAddressToBit.Length;
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             if (numberRegisters > 8)
             {
@@ -197,23 +199,7 @@ namespace ModbusLibrary
             if (restbyteCount != 0) byteCount = byteCount + 1;
             messageSendSlave[6] = (byte)byteCount;
             //4 - Send Pdu
-            //responseFromSlave = sendPdu(addressSlave, typeOfFunction, messageSendSlave, responseFromSlave, addressStartWrite, numberRegisters);
-
-            messageSendSlave[0] = addressSlave;
-            messageSendSlave[1] = typeOfFunction;
-            messageSendSlave[2] = (byte)(addressStartWrite >> 8);
-            messageSendSlave[3] = (byte)addressStartWrite;
-            messageSendSlave[4] = (byte)(numberRegisters >> 8);
-            messageSendSlave[5] = (byte)numberRegisters;
-
-            byte[] mbapSendSlave = makeMBAP((ushort)messageSendSlave.Count());
-            //Forma l'ADU unendo MBAP alla PDU
-            messageSendSlave = mbapSendSlave.Concat(messageSendSlave).ToArray();
-
-            socket.Send(messageSendSlave);
-            responseFromSlave = GetResponse(responseFromSlave);
-
-
+            responseFromSlave = sendPdu(addressSlave, typeOfFunction, messageSendSlave, responseFromSlave, addressStartWrite, numberRegisters);
 
             return checkResponse;
         }
@@ -254,6 +240,7 @@ namespace ModbusLibrary
         }
         public byte[] sendPdu(byte addressSlave, byte typeOfFunction, byte[] messageSendSlave, byte[] responseFromSlave, byte addressStartRead, int numberRegisterRead)
         {
+            /*
             byte[] pdu = buildPdu(addressSlave, typeOfFunction, addressStartRead, numberRegisterRead);
             byte[] mbapSendSlave = makeMBAP((ushort)pdu.Count());
             //Forma l'ADU unendo MBAP alla PDU
@@ -263,6 +250,21 @@ namespace ModbusLibrary
             responseFromSlave = GetResponse(responseFromSlave);
 
             return responseFromSlave;
+            */
+
+            //////////////////////////
+
+            buildPdu(addressSlave, messageSendSlave, typeOfFunction, addressStartRead, numberRegisterRead);
+            byte[] mbapSendSlave = makeMBAP((ushort)messageSendSlave.Count());
+            //Forma l'ADU unendo MBAP alla PDU
+            messageSendSlave = mbapSendSlave.Concat(messageSendSlave).ToArray();
+
+            socket.Send(messageSendSlave);
+            responseFromSlave = GetResponse(responseFromSlave);
+
+            return responseFromSlave;
+
+
         }
         public byte[] sendPdu(byte addressSlave, byte typeOfFunction, byte[] messageSendSlave, byte[] responseFromSlave, byte addressStartRead, int numberRegisterRead, int[] valuesWriteAddress)
         {
@@ -332,5 +334,27 @@ namespace ModbusLibrary
 
             return messageSendSlave;
         }
+
+        private void buildPdu(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
+        {
+            //Array to receive CRC bytes: 
+            //byte[] CRC = new byte[2];
+            //- Builds the message com eindicated in the modbus protocol for function
+            //address Slave
+            messageSendSlave[0] = addressSlave;
+            //type of function
+            messageSendSlave[1] = typeOfFunction;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[2] = (byte)(addressStart >> 8);
+            messageSendSlave[3] = (byte)addressStart;
+            //is divided into two bytes the value , the first one shifted by 8
+            messageSendSlave[4] = (byte)(numberRegisters >> 8);
+            messageSendSlave[5] = (byte)numberRegisters;
+            //CRC - get the CRC with the methd and pot resul in two last position
+            //GetCRC(messageSendSlave, CRC);
+            //messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
+            //messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+        }
+
     }
 }
