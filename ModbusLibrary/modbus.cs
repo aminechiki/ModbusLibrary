@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace ModbusLibrary
 {
-    class modbus
+    abstract class modbus
     {
-
+   
     }
 }

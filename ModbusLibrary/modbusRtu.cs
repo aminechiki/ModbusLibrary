@@ -111,26 +111,14 @@ namespace ModbusLibrary
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             responseFromSlave = new byte[5 + 2 * numberRegistersRead];
             SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < responseFromSlave[2]; i++)
-            {
-                if ((3 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[3 + i] | responseFromSlave[(3 + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
-            }
+
+
+            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
+            
             return valueRead;
         }
         ///<summary>
@@ -139,30 +127,20 @@ namespace ModbusLibrary
         ///<returns>return ...</returns>
         public Dictionary<int, int> readInputRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
-            byte typeOfFunction = 3;
+            //DA RIGUARDARE PERCHE typeOfFunction ERA MESSO A 3
+
+
+            byte typeOfFunction = 4;
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             responseFromSlave = new byte[5 + 2 * numberRegistersRead];
             SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < responseFromSlave[2]; i++)
-            {
-                if ((3 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[3 + i] | responseFromSlave[(3 + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
-            }
+
+            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
+
             return valueRead;
         }
         ///<summary>
@@ -356,6 +334,27 @@ namespace ModbusLibrary
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
         }
+
+        public Dictionary<int, int> orderAddressValueRead(byte addressStartRead, byte[] responseFromSlave)
+        {
+            byte numberByteResponse = responseFromSlave[2];
+            byte startReadByte = 3;
+
+            Dictionary<int, int> valueRead = new Dictionary<int, int>();
+            int j = 0;
+            //4 - sum the two bytes to form a decimal number
+            for (int i = 0; i < numberByteResponse; i++)
+            {
+                if ((9 + i) % 2 == 0)
+                {
+                    valueRead.Add(addressStartRead, responseFromSlave[startReadByte + i] | responseFromSlave[(startReadByte + i) - 1] << 8);
+                    addressStartRead++;
+                    j++;
+                }
+            }
+            return valueRead;
+        }
+
 
         // -------------------------------------------------------------------------------------------------------------------
         /// VECCHIO METODO GENERALE PER LA LETTURA E SCRITTURA
