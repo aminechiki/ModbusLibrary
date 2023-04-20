@@ -23,7 +23,7 @@ namespace ModbusLibrary
             //inputRegisters = deviceRtu.readInputRegisters(10, 50, 10);
 
             // - WRITE
-            int[] valueMultipleRegisters = { 12, 13, 14, 15 };
+            int[] valueMultipleRegisters = { 11, 22, 33, 22 };
             //fc 05 - write single coil
             //deviceRtu.writeSingleCoil(10, 1, true);
             //fc 15 - write multiple coil
@@ -54,7 +54,7 @@ namespace ModbusLibrary
             //fc 06 - write single register
             //deviceTcp.writeSingleRegister(1, 00120, 343);
             //fc 16 - write multiple registers
-            //deviceTcp.writeMultipleRegisters(1, 00120, valueMultipleRegisters);
+            deviceTcp.writeMultipleRegisters(1, 00120, valueMultipleRegisters);
 
         }
     }
