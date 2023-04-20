@@ -10,26 +10,26 @@ namespace ModbusLibrary
         public modbusRtu(string portName, int baudRate)
         {
             //Ensure port isn't already opened:
-                //Assign settings to the serial port:
-                serialPort.PortName = portName;
-                serialPort.BaudRate = baudRate;
-                //sets the standard lenght of data bits per byte
-                serialPort.DataBits = 8;
-                //imposte parity and stop bit
-                serialPort.Parity = Parity.None;
-                serialPort.StopBits = StopBits.One;
-                //Imposte Timeout:
-                serialPort.ReadTimeout = 1000;
-                serialPort.WriteTimeout = 1000;
-                //Try to open the port
-                try
-                {
-                    serialPort.Open();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
+            //Assign settings to the serial port:
+            serialPort.PortName = portName;
+            serialPort.BaudRate = baudRate;
+            //sets the standard lenght of data bits per byte
+            serialPort.DataBits = 8;
+            //imposte parity and stop bit
+            serialPort.Parity = Parity.None;
+            serialPort.StopBits = StopBits.One;
+            //Imposte Timeout:
+            serialPort.ReadTimeout = 1000;
+            serialPort.WriteTimeout = 1000;
+            //Try to open the port
+            try
+            {
+                serialPort.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
         ///<summary>
         ///<para>fc 01 - Read Coil Status</para>
@@ -52,7 +52,7 @@ namespace ModbusLibrary
             //8 then you will put 1 by default.
             responseFromSlave = new byte[5 + byteCount];
             //4 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             //5 - Take the value read
             for (int i = 0; i < byteCount; i++)
             {
@@ -87,7 +87,7 @@ namespace ModbusLibrary
             //to read the slave will respond to you with a response byte, if the bits you want to read are less than 8 then you will put 1 by default
             responseFromSlave = new byte[5 + byteCount];
             //4 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             //5 - Take the value read
             for (int i = 0; i < byteCount; i++)
             {
@@ -111,26 +111,14 @@ namespace ModbusLibrary
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < responseFromSlave[2]; i++)
-            {
-                if ((3 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[3 + i] | responseFromSlave[(3 + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
-            }
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
+
+
+            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
+
             return valueRead;
         }
         ///<summary>
@@ -139,30 +127,20 @@ namespace ModbusLibrary
         ///<returns>return ...</returns>
         public Dictionary<int, int> readInputRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
         {
-            byte typeOfFunction = 3;
+            //DA RIGUARDARE PERCHE typeOfFunction ERA MESSO A 3
+
+
+            byte typeOfFunction = 4;
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[0];
             Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
+
             //3 - Based onthe type ti function will be set the correct size of the response array
             responseFromSlave = new byte[5 + 2 * numberRegistersRead];
             SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < responseFromSlave[2]; i++)
-            {
-                if ((3 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[3 + i] | responseFromSlave[(3 + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
-            }
+
+            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
+
             return valueRead;
         }
         ///<summary>
@@ -180,7 +158,7 @@ namespace ModbusLibrary
             if (stateCoil) numberRegisters = 0xFF00;
             if (!stateCoil) numberRegisters = 0x0000;
             //3 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
             //4 - Chenk reponde
             if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
             for (int i = 0; i < messageSendSlave.Length; i++)
@@ -200,7 +178,7 @@ namespace ModbusLibrary
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[8];
             //2- Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
 
             //3 - Chenk reponde
             if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
@@ -246,7 +224,7 @@ namespace ModbusLibrary
             if (restbyteCount != 0) byteCount = byteCount + 1;
             messageSendSlave[6] = (byte)byteCount;
             //4 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
             //5 - Check response 
             for (int i = 0; i < responseFromSlave.Length - 2; i++) if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
             return checkResponse;
@@ -273,7 +251,7 @@ namespace ModbusLibrary
                 messageSendSlave[8 + 2 * i] = (byte)(valuesWriteAddress[i]);
             }
             //3 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegistersWrite);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegistersWrite);
             //4 - Check response 
             for (int i = 0; i < responseFromSlave.Length - 2; i++)
             {
@@ -282,9 +260,9 @@ namespace ModbusLibrary
             return checkResponse;
         }
         //method use inside a function for send to send pdu to slave
-        private void SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
+        private byte [] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
         {
-            buildPdu(addressSlave, messageSendSlave, typeOfFunction, startWriteAddress, numberRegisters);
+            messageSendSlave = buildPdu(addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
             //Console.WriteLine("MESSAGGIO INVIATO");
             //foreach (byte m in messageSendSlave) Console.WriteLine(m);
             try
@@ -298,27 +276,40 @@ namespace ModbusLibrary
             {
                 Console.WriteLine(err);
             }
+
+            return responseFromSlave;
         }
         //method for Build a messagge to send to slave fro read
-        private void buildPdu(byte addressSlave, byte[] messageSendSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
+        private byte[] buildPdu(byte addressSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
         {
-            //Array to receive CRC bytes: 
+            byte[] messageSendSlave;
             byte[] CRC = new byte[2];
+            
+            messageSendSlave = new byte[]
+            {           
+            //Array to receive CRC bytes: 
+            
             //- Builds the message com eindicated in the modbus protocol for function
             //address Slave
-            messageSendSlave[0] = addressSlave;
+            addressSlave,
             //type of function
-            messageSendSlave[1] = typeOfFunction;
+            typeOfFunction,
             //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[2] = (byte)(addressStart >> 8);
-            messageSendSlave[3] = (byte)addressStart;
+            (byte)(addressStart >> 8),
+            (byte)addressStart,
             //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[4] = (byte)(numberRegisters >> 8);
-            messageSendSlave[5] = (byte)numberRegisters;
-            //CRC - get the CRC with the methd and pot resul in two last position
+            (byte)(numberRegisters >> 8),
+            (byte)numberRegisters
+        };
+            Array.Resize(ref messageSendSlave, messageSendSlave.Length + 2);
+
             GetCRC(messageSendSlave, CRC);
+
+            //CRC - get the CRC with the methd and pot resul in two last position    
             messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
             messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
+
+            return messageSendSlave;
         }
         //These are the methods used by all functions
         private void GetResponse(byte[] response)
@@ -355,6 +346,25 @@ namespace ModbusLibrary
             //2 - CRC is split into two bytes, the first one shifted by 8
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
+        }
+        public Dictionary<int, int> orderAddressValueRead(byte addressStartRead, byte[] responseFromSlave)
+        {
+            byte numberByteResponse = responseFromSlave[2];
+            byte startReadByte = 3;
+
+            Dictionary<int, int> valueRead = new Dictionary<int, int>();
+            int j = 0;
+            //4 - sum the two bytes to form a decimal number
+            for (int i = 0; i < numberByteResponse; i++)
+            {
+                if ((9 + i) % 2 == 0)
+                {
+                    valueRead.Add(addressStartRead, responseFromSlave[startReadByte + i] | responseFromSlave[(startReadByte + i) - 1] << 8);
+                    addressStartRead++;
+                    j++;
+                }
+            }
+            return valueRead;
         }
 
         // -------------------------------------------------------------------------------------------------------------------
