@@ -4,7 +4,7 @@ using System.IO.Ports;
 
 namespace ModbusLibrary
 {
-    class modbusRtu
+    class modbusRtu : modbus
     {
         private SerialPort serialPort = new SerialPort();
         public modbusRtu(string portName, int baudRate)
@@ -30,239 +30,12 @@ namespace ModbusLibrary
             {
                 Console.WriteLine(ex);
             }
-        }
-        ///<summary>
-        ///<para>fc 01 - Read Coil Status</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        public Dictionary<int, int> readCoilStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        }        
+        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
         {
-            byte typeOfFunction = 1;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes,
-            //so for every 8 bits you want to read the slave will respond to you with a response byte, if the bits you want to read are less than
-            //8 then you will put 1 by default.
-            responseFromSlave = new byte[5 + byteCount];
-            //4 - Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            //5 - Take the value read
-            for (int i = 0; i < byteCount; i++)
-            {
-                string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2).PadLeft(8, '0');
+            messageSendSlave = buildPdu(messageSendSlave, addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
 
-                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
-                for (int j = 0; j < binaryByteRead.Length; j++)
-                {
-                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
-                    addressStartRead++;
-                }
-            }
-            return valueRead;
-        }
-        ///<summary>
-        ///<para>fc 02 - Read Discrete Inputs</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        public Dictionary<int, int> readDiscreteInputs(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
-        {
-            byte typeOfFunction = 2;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int byteCount;
-            int restbyteCount;
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes, so for every 8 bits you want
-            //to read the slave will respond to you with a response byte, if the bits you want to read are less than 8 then you will put 1 by default
-            responseFromSlave = new byte[5 + byteCount];
-            //4 - Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            //5 - Take the value read
-            for (int i = 0; i < byteCount; i++)
-            {
-                string binaryByteRead = Convert.ToString(responseFromSlave[3 + i], 2).PadLeft(8, '0');
-                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
-                for (int j = 0; j < binaryByteRead.Length; j++)
-                {
-                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
-                    addressStartRead++;
-                }
-            }
-            return valueRead;
-        }
-        ///<summary>
-        ///<para>fc 03 - Read Holding Register</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        public Dictionary<int, int> readHoldingRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
-        {
-            byte typeOfFunction = 3;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-
-
-            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
-
-            return valueRead;
-        }
-        ///<summary>
-        ///<para>fc 04 - Read Input Register</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        public Dictionary<int, int> readInputRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
-        {
-            //DA RIGUARDARE PERCHE typeOfFunction ERA MESSO A 3
-
-
-            byte typeOfFunction = 4;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-
-            valueRead = orderAddressValueRead(addressStartRead, responseFromSlave);
-
-            return valueRead;
-        }
-        ///<summary>
-        ///<para>fc 05 - Write Single Coil</para>
-        ///</summary>
-        ///<returns>return ...</returns
-        public bool writeSingleCoil(byte addressSlave, byte addressStartWrite, bool stateCoil)
-        {
-            byte typeOfFunction = 5;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[8];
-            bool checkResponse = true;
-            int numberRegisters = 0;
-            //2 - if stateCoil is true numberRegisters is equal 0xFF00
-            if (stateCoil) numberRegisters = 0xFF00;
-            if (!stateCoil) numberRegisters = 0x0000;
-            //3 - Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-            //4 - Chenk reponde
-            if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
-            for (int i = 0; i < messageSendSlave.Length; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
-        }
-        ///<summary>
-        ///<para>fc 06 -Write Single Register</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        public bool writeSingleRegister(byte addressSlave, byte addressStartWrite, int valuesWriteAddress)
-        {
-            byte typeOfFunction = 6;
-            bool checkResponse = true;
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[8];
-            //2- Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
-
-            //3 - Chenk reponde
-            if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
-            for (int i = 0; i < messageSendSlave.Length; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
-        }
-        ///<summary>
-        ///<para>fc 15 - Write Multiple Coils</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        ///
-        public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
-        {
-            byte typeOfFunction = 15;
-            bool checkResponse = true;
-            byte[] messageSendSlave = new byte[0];
-            byte[] responseFromSlave = new byte[8];
-            int numberRegisters = 0;
-            //2 - Find numberRegisters
-            //while (valuesWriteAddress > Math.Pow(2, numberRegisters)) numberRegisters++;
-            string valuesWriteAddressToBit = Convert.ToString(valuesWriteAddress, 2);
-            numberRegisters = valuesWriteAddressToBit.Length;
-
-
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            if (numberRegisters > 8)
-            {
-                messageSendSlave = new byte[11];
-                messageSendSlave[7] = (byte)(valuesWriteAddress >> 8);
-                messageSendSlave[8] = (byte)valuesWriteAddress;
-            }
-            if (numberRegisters <= 8)
-            {
-                messageSendSlave = new byte[10];
-                messageSendSlave[7] = (byte)valuesWriteAddress;
-            }
-            //Byte count
-            int byteCount = numberRegisters / 8;
-            int restbyteCount = numberRegisters % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            messageSendSlave[6] = (byte)byteCount;
-            //4 - Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-            //5 - Check response 
-            for (int i = 0; i < responseFromSlave.Length - 2; i++) if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            return checkResponse;
-        }
-        ///<summary>
-        ///<para>fc 16 - Write Multiple Registers</para>
-        ///</summary>
-        ///<returns>return ...</returns>
-        ///
-        public bool writeMultipleRegisters(byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
-        {
-            byte typeOfFunction = 16;
-            bool checkResponse = true;
-            //Take the numbers of register do you want write
-            byte numberRegistersWrite = (byte)valuesWriteAddress.Length;
-            byte[] messageSendSlave = new byte[9 + 2 * numberRegistersWrite];
-            byte[] responseFromSlave = new byte[8];
-            //Add bytecount to message:
-            messageSendSlave[6] = (byte)(numberRegistersWrite * 2);
-            //2 - Put write values into message prior to sending:
-            for (int i = 0; i < numberRegistersWrite; i++)
-            {
-                messageSendSlave[7 + 2 * i] = (byte)(valuesWriteAddress[i] >> 8);
-                messageSendSlave[8 + 2 * i] = (byte)(valuesWriteAddress[i]);
-            }
-            //3 - Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegistersWrite);
-            //4 - Check response 
-            for (int i = 0; i < responseFromSlave.Length - 2; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
-        }
-        //method use inside a function for send to send pdu to slave
-        private byte [] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
-        {
-            messageSendSlave = buildPdu(addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
+            //messageSendSlave = buildPdu(addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
             //Console.WriteLine("MESSAGGIO INVIATO");
             //foreach (byte m in messageSendSlave) Console.WriteLine(m);
             try
@@ -279,32 +52,20 @@ namespace ModbusLibrary
 
             return responseFromSlave;
         }
-        //method for Build a messagge to send to slave fro read
-        private byte[] buildPdu(byte addressSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
+        //method use inside a function for send to send pdu to slave
+        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
         {
-            byte[] messageSendSlave;
             byte[] CRC = new byte[2];
-            
-            messageSendSlave = new byte[]
-            {           
-            //Array to receive CRC bytes: 
-            
-            //- Builds the message com eindicated in the modbus protocol for function
-            //address Slave
-            addressSlave,
-            //type of function
-            typeOfFunction,
+            messageSendSlave[0] = addressSlave;
+            messageSendSlave[1] = typeOfFunction;
             //is divided into two bytes the value , the first one shifted by 8
-            (byte)(addressStart >> 8),
-            (byte)addressStart,
+            messageSendSlave[2] = (byte)(addressStart >> 8);
+            messageSendSlave[3] = (byte)addressStart;
             //is divided into two bytes the value , the first one shifted by 8
-            (byte)(numberRegisters >> 8),
-            (byte)numberRegisters
-        };
-            Array.Resize(ref messageSendSlave, messageSendSlave.Length + 2);
+            messageSendSlave[4] = (byte)(numberRegisters >> 8);
+            messageSendSlave[5] = (byte)numberRegisters;
 
             GetCRC(messageSendSlave, CRC);
-
             //CRC - get the CRC with the methd and pot resul in two last position    
             messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
             messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
@@ -347,7 +108,24 @@ namespace ModbusLibrary
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
         }
-        public Dictionary<int, int> orderAddressValueRead(byte addressStartRead, byte[] responseFromSlave)
+        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, byte addressStartRead)
+        {
+            byte byteStartRead = 3;
+
+            for (int i = 0; i < byteCount; i++)
+            {
+                string binaryByteRead = Convert.ToString(responseFromSlave[byteStartRead + i], 2).PadLeft(8, '0');
+
+                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
+                for (int j = 0; j < binaryByteRead.Length; j++)
+                {
+                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
+                    addressStartRead++;
+                }
+            }
+            return valueRead;
+        }
+        public override Dictionary<int, int> orderAddressAnalogFunction(byte addressStartRead, byte[] responseFromSlave)
         {
             byte numberByteResponse = responseFromSlave[2];
             byte startReadByte = 3;
@@ -366,131 +144,5 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-
-        // -------------------------------------------------------------------------------------------------------------------
-        /// VECCHIO METODO GENERALE PER LA LETTURA E SCRITTURA
-        /*
-
-        // FC 01 - READ COIL STATUS / FC 02 - READ INPUT STATUS / FC 03 READ HOLDING REGISTERS / FC 04 READ INPUT REGISTERS
-        public int[] readModbus(byte typeOfFunction, byte addressSlave, byte addressStartRead, byte numberRegistersRead)
-        {
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            int[] valueRead = new int[0];
-
-            int byteCount;
-            int restbyteCount;
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2 - Find ByteCount
-            byteCount = numberRegistersRead / 8;
-            restbyteCount = numberRegistersRead % 8;
-            if (restbyteCount != 0) byteCount = byteCount + 1;
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            switch (typeOfFunction)
-            {
-                case 1:
-                case 2:
-                    //read inputs are bits that are written in bytes, so for every 8 bits you want
-                    //to read the slave will respond to you with a response byte, if the bits you
-                    //want to read are less than 8 then you will put 1 by default
-                    responseFromSlave = new byte[5 + byteCount];
-                    SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-                    valueRead = new int[byteCount];
-                    for (int i = 0; i < byteCount; i++) valueRead[i] = responseFromSlave[3 + i];
-                    break;
-                case 3:
-                case 4:
-                    responseFromSlave = new byte[5 + 2 * numberRegistersRead];
-                    valueRead = new int[numberRegistersRead];
-                    SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-                    int j = 0;
-                    //4 - sum the two bytes to form a decimal number
-                    for (int i = 0; i < responseFromSlave[2]; i++)
-                    {
-                        if ((3 + i) % 2 == 0)
-                        {
-                            valueRead[j] = responseFromSlave[3 + i] | responseFromSlave[(3 + i) - 1] << 8;
-                            j++;
-                        }
-                    }
-
-                    valueRead = new int[numberRegistersRead];
-                    break;
-            }
-            return valueRead;
-        }
-
-        // FC 15 - WRITE MULTIPLE COILS
-        public void writeCoil(byte typeOfFunction, byte addressSlave, byte addressStartWrite, int numberRegisters, int bitWriteMultipleCoils = 0)
-        {
-            byte[] messageSendSlave = new byte[0];
-            byte[] responseFromSlave = new byte[8];
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2 - Based onthe type ti function will be set the correct size of the response array
-            switch (typeOfFunction)
-            {
-                case 5:
-                    messageSendSlave = new byte[8];
-                    break;
-                case 15:
-                    if (numberRegisters > 8)
-                    {
-                        messageSendSlave = new byte[11];
-                        messageSendSlave[7] = (byte)(bitWriteMultipleCoils >> 8);
-                        messageSendSlave[8] = (byte)bitWriteMultipleCoils;
-                    }
-                    if (numberRegisters <= 8)
-                    {
-                        messageSendSlave = new byte[10];
-                        messageSendSlave[7] = (byte)bitWriteMultipleCoils;
-                    }
-                    //Byte count
-                    int byteCount = numberRegisters / 8;
-                    int restbyteCount = numberRegisters % 8;
-                    if (restbyteCount != 0) byteCount = byteCount + 1;
-                    messageSendSlave[6] = (byte)byteCount;
-                    break;
-            }
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-        }
-
-        public void writeRegister(byte typeOfFunction, byte addressSlave, byte addressStartWrite, int valuesWriteAddress)
-        {
-            byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[8];
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-            //2- Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
-        }
-
-        //FC 16 - WRITE MULTIPLE REGISTERS
-        public void writeRegister(byte typeOfFunction, byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
-        {
-            //Take the numbers of register do you want write
-            byte numberRegistersWrite = (byte)valuesWriteAddress.Length;
-            byte[] messageSendSlave = new byte[9 + 2 * numberRegistersWrite];
-            byte[] responseFromSlave = new byte[8];
-            //Add bytecount to message:
-            messageSendSlave[6] = (byte)(numberRegistersWrite * 2);
-            //1 - Clear buffer in In and Out of serial Port
-            serialPort.DiscardOutBuffer();
-            serialPort.DiscardInBuffer();
-
-            //2 - Put write values into message prior to sending:
-            for (int i = 0; i < numberRegistersWrite; i++)
-            {
-                messageSendSlave[7 + 2 * i] = (byte)(valuesWriteAddress[i] >> 8);
-                messageSendSlave[8 + 2 * i] = (byte)(valuesWriteAddress[i]);
-            }
-            //3 - Send Pdu
-            SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegistersWrite);
-        }
-        */
     }
 }
