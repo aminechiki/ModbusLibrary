@@ -25,7 +25,7 @@ namespace ModbusLibrary
                 socket.SendTimeout = 1000;
             }
         }
-        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
+        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters)
         {
             messageSendSlave = buildPdu(messageSendSlave, addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
             byte[] mbapSendSlave = makeMBAP((ushort)messageSendSlave.Count());
@@ -38,9 +38,8 @@ namespace ModbusLibrary
 
             return responseFromSlave;
         }
-        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
+        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, int addressStart, int numberRegisters)
         {
-
             messageSendSlave[0] = addressSlave;
             messageSendSlave[1] = typeOfFunction;
             //is divided into two bytes the value , the first one shifted by 8
@@ -80,9 +79,9 @@ namespace ModbusLibrary
                 (byte)(count)       //length low byte
             };
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, byte addressStartRead)
+        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead)
         {
-            byte byteStartRead = 9;
+            byte byteStartRead = 3;
 
             for (int i = 0; i < byteCount; i++)
             {
@@ -98,7 +97,7 @@ namespace ModbusLibrary
 
             return valueRead;
         }
-        public override Dictionary<int, int> orderAddressAnalogFunction(byte addressStartRead, byte[] responseFromSlave)
+        public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
         {
             byte numberByteResponse = responseFromSlave[8];
             byte startReadByte = 9;

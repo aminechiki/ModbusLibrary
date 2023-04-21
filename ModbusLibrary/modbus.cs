@@ -13,7 +13,7 @@ namespace ModbusLibrary
         ///<para>fc 01 - Read Coil Status</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public Dictionary<int, int> readCoilStatus(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        public Dictionary<int, int> readCoilStatus(byte addressSlave, int addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 1;
             byte[] messageSendSlave = new byte[8];
@@ -39,7 +39,7 @@ namespace ModbusLibrary
         ///<para>fc 02 - Read Discrete Inputs</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public Dictionary<int, int> readDiscreteInputs(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        public Dictionary<int, int> readDiscreteInputs(byte addressSlave, int addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 2;
             byte[] messageSendSlave = new byte[8];
@@ -65,7 +65,7 @@ namespace ModbusLibrary
         ///<para>fc 03 - Read Holding Register</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public Dictionary<int, int> readHoldingRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        public Dictionary<int, int> readHoldingRegisters(byte addressSlave, int addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 3;
             byte[] messageSendSlave = new byte[8];
@@ -82,7 +82,7 @@ namespace ModbusLibrary
         ///<para>fc 04 - Read Input Register</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public Dictionary<int, int> readInputRegisters(byte addressSlave, byte addressStartRead, byte numberRegistersRead)
+        public Dictionary<int, int> readInputRegisters(byte addressSlave, int addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 4;
             byte[] messageSendSlave = new byte[8];
@@ -102,7 +102,7 @@ namespace ModbusLibrary
         ///<para>fc 05 - Write Single Coil</para>
         ///</summary>
         ///<returns>return ...</returns
-        public bool writeSingleCoil(byte addressSlave, byte addressStartWrite, bool stateCoil)
+        public bool writeSingleCoil(byte addressSlave, int addressStartWrite, bool stateCoil)
         {
             byte typeOfFunction = 5;
             byte[] messageSendSlave = new byte[8];
@@ -126,14 +126,14 @@ namespace ModbusLibrary
         ///<para>fc 06 -Write Single Register</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public bool writeSingleRegister(byte addressSlave, byte addressStartWrite, int valuesWriteAddress)
+        public bool writeSingleRegister(byte addressSlave, int addressStartWrite, int valuesWriteAddress)
         {
             byte typeOfFunction = 6;
             bool checkResponse = true;
             byte[] messageSendSlave = new byte[8];
             byte[] responseFromSlave = new byte[8];
             //2- Send Pdu
-            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, valuesWriteAddress);
+            responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, (int)addressStartWrite, valuesWriteAddress);
             //3 - Chenk reponde
             if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
             for (int i = 0; i < messageSendSlave.Length; i++)
@@ -186,7 +186,7 @@ namespace ModbusLibrary
         ///</summary>
         ///<returns>return ...</returns>
         ///
-        public bool writeMultipleRegisters(byte addressSlave, byte addressStartWrite, int[] valuesWriteAddress)
+        public bool writeMultipleRegisters(byte addressSlave, int addressStartWrite, int[] valuesWriteAddress)
         {
             byte typeOfFunction = 16;
             bool checkResponse = true;
@@ -213,8 +213,8 @@ namespace ModbusLibrary
         }
 
         //METHOD USE INSIDE FUNCTIONS
-        public abstract byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters);
-        public abstract Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, byte addressStartRead);
-        public abstract Dictionary<int, int> orderAddressAnalogFunction(byte addressStartRead, byte[] responseFromSlave);
+        public abstract byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters);
+        public abstract Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead);
+        public abstract Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave);
     }
 }
