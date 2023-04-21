@@ -31,7 +31,7 @@ namespace ModbusLibrary
                 Console.WriteLine(ex);
             }
         }        
-        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, byte startWriteAddress, int numberRegisters)
+        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters)
         {
             messageSendSlave = buildPdu(messageSendSlave, addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
 
@@ -53,7 +53,7 @@ namespace ModbusLibrary
             return responseFromSlave;
         }
         //method use inside a function for send to send pdu to slave
-        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, byte addressStart, int numberRegisters)
+        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, int addressStart, int numberRegisters)
         {
             byte[] CRC = new byte[2];
             messageSendSlave[0] = addressSlave;
@@ -108,7 +108,7 @@ namespace ModbusLibrary
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, byte addressStartRead)
+        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead)
         {
             byte byteStartRead = 3;
 
@@ -125,7 +125,7 @@ namespace ModbusLibrary
             }
             return valueRead;
         }
-        public override Dictionary<int, int> orderAddressAnalogFunction(byte addressStartRead, byte[] responseFromSlave)
+        public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
         {
             byte numberByteResponse = responseFromSlave[2];
             byte startReadByte = 3;
