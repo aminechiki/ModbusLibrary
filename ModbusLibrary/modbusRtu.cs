@@ -108,9 +108,10 @@ namespace ModbusLibrary
             CRC[1] = (byte)(crcFull >> 8);
             CRC[0] = (byte)crcFull;
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead)
+        public override Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead)
         {
             byte byteStartRead = 3;
+            Dictionary<int, int> valueRead = new Dictionary<int, int>();
 
             for (int i = 0; i < byteCount; i++)
             {
@@ -124,6 +125,7 @@ namespace ModbusLibrary
                 }
             }
             return valueRead;
+
         }
         public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
         {
