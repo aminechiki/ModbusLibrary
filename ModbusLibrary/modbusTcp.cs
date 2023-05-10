@@ -33,7 +33,7 @@ namespace ModbusLibrary
             messageSendSlave = mbapSendSlave.Concat(messageSendSlave).ToArray();
 
             //Array.Resize(ref messageSendSlave, messageSendSlave.Length - 2);
-            socket.Send(messageSendSlave);
+            //socket.Send(messageSendSlave);
             responseFromSlave = GetResponse(responseFromSlave);
 
             return responseFromSlave;
@@ -56,6 +56,8 @@ namespace ModbusLibrary
             ushort sizeAduFromSlave;
             byte[] mbapFromSlave = new byte[7];
             byte[] aduFromSlave;
+
+            
 
             socket.Receive(mbapFromSlave, 0, mbapFromSlave.Length, SocketFlags.None);
             sizeAduFromSlave = mbapFromSlave[4];
