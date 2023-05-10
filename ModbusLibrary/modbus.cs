@@ -17,8 +17,6 @@ namespace ModbusLibrary
         {
             byte typeOfFunction = 1;
             byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
             //2 - Find ByteCount
@@ -28,12 +26,11 @@ namespace ModbusLibrary
             //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes,
             //so for every 8 bits you want to read the slave will respond to you with a response byte, if the bits you want to read are less than
             //8 then you will put 1 by default.
-            responseFromSlave = new byte[5 + byteCount];
+            byte[] responseFromSlave = new byte[5 + byteCount];
             //4 - Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             //5 - Take the value read
-            valueRead = orderAddressDigitalFunction(valueRead, responseFromSlave, byteCount, addressStartRead);
-            return valueRead;
+            return orderAddressDigitalFunction(responseFromSlave, byteCount, addressStartRead);
         }
         ///<summary>
         ///<para>fc 02 - Read Discrete Inputs</para>
@@ -43,8 +40,6 @@ namespace ModbusLibrary
         {
             byte typeOfFunction = 2;
             byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
             int byteCount;
             int restbyteCount;
             //2 - Find ByteCount
@@ -53,13 +48,11 @@ namespace ModbusLibrary
             if (restbyteCount != 0) byteCount = byteCount + 1;
             //3 - Based onthe type ti function will be set the correct size of the response array read inputs are bits that are written in bytes, so for every 8 bits you want
             //to read the slave will respond to you with a response byte, if the bits you want to read are less than 8 then you will put 1 by default
-            responseFromSlave = new byte[5 + byteCount];
+            byte[] responseFromSlave = new byte[5 + byteCount];
             //4 - Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            //5 - Take the value read
-            valueRead = orderAddressDigitalFunction(valueRead, responseFromSlave, byteCount, addressStartRead);
-
-            return valueRead;
+            //5 - Take the value read 
+            return orderAddressDigitalFunction(responseFromSlave, byteCount, addressStartRead);
         }
         ///<summary>
         ///<para>fc 03 - Read Holding Register</para>
@@ -69,14 +62,11 @@ namespace ModbusLibrary
         {
             byte typeOfFunction = 3;
             byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+            byte[] responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+            //1 - Send messagge and wait the take the response from salve           
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-            valueRead = orderAddressAnalogFunction(addressStartRead, responseFromSlave);
-
-            return valueRead;
+            //2 - sort the value by register
+            return orderAddressAnalogFunction(addressStartRead, responseFromSlave);
         }
         ///<summary>
         ///<para>fc 04 - Read Input Register</para>
@@ -86,15 +76,11 @@ namespace ModbusLibrary
         {
             byte typeOfFunction = 4;
             byte[] messageSendSlave = new byte[8];
-            byte[] responseFromSlave = new byte[0];
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            //3 - Based onthe type ti function will be set the correct size of the response array
-            responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+            byte[] responseFromSlave = new byte[5 + 2 * numberRegistersRead];
+            //1 - Send messagge and wait the take the response from salve          
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
-
-            valueRead = orderAddressAnalogFunction(addressStartRead, responseFromSlave);
-
-            return valueRead;
+            //2 - sort the value by register
+            return orderAddressAnalogFunction(addressStartRead, responseFromSlave);
         }
 
         //WRITE
@@ -102,7 +88,7 @@ namespace ModbusLibrary
         ///<para>fc 05 - Write Single Coil</para>
         ///</summary>
         ///<returns>return ...</returns
-        public bool writeSingleCoil(byte addressSlave, int addressStartWrite, bool stateCoil)
+        public void writeSingleCoil(byte addressSlave, int addressStartWrite, bool stateCoil)
         {
             byte typeOfFunction = 5;
             byte[] messageSendSlave = new byte[8];
@@ -114,19 +100,12 @@ namespace ModbusLibrary
             if (!stateCoil) numberRegisters = 0x0000;
             //3 - Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-            //4 - Chenk reponde
-            if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
-            for (int i = 0; i < messageSendSlave.Length; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
         }
         ///<summary>
         ///<para>fc 06 -Write Single Register</para>
         ///</summary>
         ///<returns>return ...</returns>
-        public bool writeSingleRegister(byte addressSlave, int addressStartWrite, int valuesWriteAddress)
+        public void writeSingleRegister(byte addressSlave, int addressStartWrite, int valuesWriteAddress)
         {
             byte typeOfFunction = 6;
             bool checkResponse = true;
@@ -134,20 +113,13 @@ namespace ModbusLibrary
             byte[] responseFromSlave = new byte[8];
             //2- Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, (int)addressStartWrite, valuesWriteAddress);
-            //3 - Chenk reponde
-            if (messageSendSlave.Length != responseFromSlave.Length) checkResponse = false;
-            for (int i = 0; i < messageSendSlave.Length; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
         }
         ///<summary>
         ///<para>fc 15 - Write Multiple Coils</para>
         ///</summary>
         ///<returns>return ...</returns>
         ///
-        public bool writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
+        public void writeMultipleCoils(byte addressSlave, byte addressStartWrite, long valuesWriteAddress)
         {
             byte typeOfFunction = 15;
             bool checkResponse = true;
@@ -177,16 +149,13 @@ namespace ModbusLibrary
             messageSendSlave[6] = (byte)byteCount;
             //4 - Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegisters);
-            //5 - Check response 
-            for (int i = 0; i < responseFromSlave.Length - 2; i++) if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            return checkResponse;
         }
         ///<summary>
         ///<para>fc 16 - Write Multiple Registers</para>
         ///</summary>
         ///<returns>return ...</returns>
         ///
-        public bool writeMultipleRegisters(byte addressSlave, int addressStartWrite, int[] valuesWriteAddress)
+        public void writeMultipleRegisters(byte addressSlave, int addressStartWrite, int[] valuesWriteAddress)
         {
             byte typeOfFunction = 16;
             bool checkResponse = true;
@@ -204,17 +173,11 @@ namespace ModbusLibrary
             }
             //3 - Send Pdu
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartWrite, numberRegistersWrite);
-            //4 - Check response 
-            for (int i = 0; i < responseFromSlave.Length - 2; i++)
-            {
-                if (messageSendSlave[i] != responseFromSlave[i]) checkResponse = false;
-            }
-            return checkResponse;
         }
 
         //METHOD USE INSIDE FUNCTIONS
         public abstract byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters);
-        public abstract Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead);
+        public abstract Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead);
         public abstract Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave);
     }
 }

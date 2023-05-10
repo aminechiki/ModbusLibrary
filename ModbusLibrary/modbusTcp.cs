@@ -55,7 +55,7 @@ namespace ModbusLibrary
         {
             ushort sizeAduFromSlave;
             byte[] mbapFromSlave = new byte[7];
-            byte[] aduFromSlave;
+            byte[] aduFromSlave;            
 
             socket.Receive(mbapFromSlave, 0, mbapFromSlave.Length, SocketFlags.None);
             sizeAduFromSlave = mbapFromSlave[4];
@@ -79,9 +79,10 @@ namespace ModbusLibrary
                 (byte)(count)       //length low byte
             };
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(Dictionary<int, int> valueRead, byte[] responseFromSlave, int byteCount, int addressStartRead)
+        public override Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead)
         {
-            byte byteStartRead = 3;
+            byte byteStartRead = 9;
+            Dictionary<int, int> valueRead = new Dictionary<int, int>();
 
             for (int i = 0; i < byteCount; i++)
             {
@@ -94,7 +95,6 @@ namespace ModbusLibrary
                     addressStartRead++;
                 }
             }
-
             return valueRead;
         }
         public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
