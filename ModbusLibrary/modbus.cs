@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -61,12 +63,19 @@ namespace ModbusLibrary
         public Dictionary<int, int> readHoldingRegisters(byte addressSlave, int addressStartRead, byte numberRegistersRead)
         {
             byte typeOfFunction = 3;
-            byte[] messageSendSlave = new byte[8];
+            byte[] messageSendSlave = new byte[6];   //HO CAMBIATO QUESTOOOOOO  //PRIMA LA DIMENSIONE ERA DI 8
             byte[] responseFromSlave = new byte[5 + 2 * numberRegistersRead];
             //1 - Send messagge and wait the take the response from salve           
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, addressStartRead, numberRegistersRead);
             //2 - sort the value by register
-            return orderAddressAnalogFunction(addressStartRead, responseFromSlave);
+            //return orderAddressAnalogFunction(addressStartRead, responseFromSlave);
+
+
+            //socket.(byte[] buffer, int offset, int size, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback ? callback, object ? state);
+
+            Dictionary<int, int> p = new Dictionary<int, int>();
+
+            return p;
         }
         ///<summary>
         ///<para>fc 04 - Read Input Register</para>
@@ -109,9 +118,11 @@ namespace ModbusLibrary
         {
             byte typeOfFunction = 6;
             bool checkResponse = true;
-            byte[] messageSendSlave = new byte[8];
+            byte[] messageSendSlave = new byte[6];
             byte[] responseFromSlave = new byte[8];
             //2- Send Pdu
+
+
             responseFromSlave = SendPdu(addressSlave, messageSendSlave, responseFromSlave, typeOfFunction, (int)addressStartWrite, valuesWriteAddress);
         }
         ///<summary>
