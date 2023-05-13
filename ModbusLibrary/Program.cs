@@ -18,15 +18,17 @@ namespace ModbusLibrary
 
             int[] valueMultipleRegisters = { 1, 2, 3, 4};
 
-            ModbusTcpAsync modbus = new ModbusTcpAsync("192.168.0.1");
+            ModbusTcpAsync modbus = new ModbusTcpAsync("127.0.0.1");
             //modbus.readHoldingRegisters(0, 0, 2);
+
 
             //modbus.writeSingleRegister(0, 5, 0);
 
-            modbus.writeSingleRegister(0, 5, 2);
+
+            modbus.writeSingleRegister(0, 0, 44);
 
 
-
+            //modbus.writeSingleRegister(0, 5, 24);
         }
     }
 }
