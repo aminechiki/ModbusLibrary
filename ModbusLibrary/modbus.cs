@@ -188,6 +188,7 @@ namespace ModbusLibrary
 
         //METHOD USE INSIDE FUNCTIONS
         public abstract byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters);
+
         public abstract Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead);
         public abstract Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave);
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 
+
 namespace ModbusLibrary
 {
     class modbusTcp : modbus
@@ -49,7 +50,7 @@ namespace ModbusLibrary
             messageSendSlave[4] = (byte)(numberRegisters >> 8);
             messageSendSlave[5] = (byte)numberRegisters;
 
-            return messageSendSlave;
+            return messageSendSlave; 
         }
         public byte[] GetResponse(byte[] responseFromSlave)
         {
@@ -65,6 +66,11 @@ namespace ModbusLibrary
             socket.Receive(aduFromSlave, 0, aduFromSlave.Count(), SocketFlags.None);
 
             responseFromSlave = mbapFromSlave.Concat(aduFromSlave).ToArray();
+
+            foreach(byte f in responseFromSlave)
+            {
+                Console.WriteLine(f);
+            }
 
             return responseFromSlave;
         }

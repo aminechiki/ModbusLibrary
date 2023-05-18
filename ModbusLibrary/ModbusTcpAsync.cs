@@ -274,6 +274,7 @@ namespace ModbusLibrary
         private void OnReceive(System.IAsyncResult result)
         {
             datoRicevuto = true;
+            
         }
 
         private byte[] makeMBAP(ushort count)
