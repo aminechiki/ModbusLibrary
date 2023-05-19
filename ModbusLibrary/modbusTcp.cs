@@ -2,125 +2,143 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections;
+using System.Windows.Markup;
 
 namespace ModbusLibrary
 {
-    class modbusTcp : modbus
+    internal class ModbusTcp : Modbus
     {
         private TcpClient client;
         private Socket socket;
-        public modbusTcp(string ipAddress, int port = 502)
+        private bool _ConnectionType { get; set; }               //true = async 
+        private bool _Connected;
+        public byte[] _ResponseFromSlave = new byte[2048];
+        public byte[] DataRecived;
+        private byte[] MessageSendSlave;
+
+        private static ushort _timeout = 100;
+
+        //vengono richiamti quando arriva un uovo dato
+        public event ResponseData OnResponseData;
+        public delegate void ResponseData(byte[] data);
+        public ushort timeout
         {
-            client = new TcpClient();
-            IAsyncResult result = client.BeginConnect(ipAddress, port, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(3000, true))
+            get { return _timeout; }
+            set { _timeout = value; }
+        }
+        public ModbusTcp(string ipAddress, int port, bool connectionType)
+        {
+            _ConnectionType = connectionType;
+            OpenConnection(ipAddress, port, connectionType);
+        }
+        public override bool OpenConnection(string ipAddress, int port, bool connectionType)
+        {
+            try
             {
-                client.Close();
-                throw new ApplicationException("Failed to connect to server");
+                if (connectionType)
+                {
+                    IPAddress _ipAddress;
+                    if (IPAddress.TryParse(ipAddress, out _ipAddress) == false)
+                    {
+                        IPHostEntry hst = Dns.GetHostEntry(ipAddress);
+                        ipAddress = hst.AddressList[0].ToString();
+                    }
+
+                    socket = new Socket(IPAddress.Parse(ipAddress).AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    socket.Connect(new IPEndPoint(IPAddress.Parse(ipAddress), port));
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, _timeout);
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, _timeout);
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, 1);
+                }
+
+                _Connected = true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _Connected = false;
+            }
+            return _Connected;
+        }
+        public override void SendPacket()
+        {
+            //if the connection is async send packet, trigger when the server response
+            if (_ConnectionType)
+            {
+                socket.BeginSend(this.MessageSendSlave, 0, this.MessageSendSlave.Length, SocketFlags.None, new AsyncCallback(OnSend), null);
             }
             else
             {
-                socket = client.Client;
-                socket.ReceiveTimeout = 1000;
-                socket.SendTimeout = 1000;
+                socket.Send(this.MessageSendSlave);
+                GetResponse();
             }
         }
-        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters)
+        public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int numAddress)
         {
-            messageSendSlave = buildPdu(messageSendSlave, addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
-            byte[] mbapSendSlave = makeMBAP((ushort)messageSendSlave.Count());
-            //Forma l'ADU unendo MBAP alla PDU
-            messageSendSlave = mbapSendSlave.Concat(messageSendSlave).ToArray();
-
-            //Array.Resize(ref messageSendSlave, messageSendSlave.Length - 2);
-            socket.Send(messageSendSlave);
-            responseFromSlave = GetResponse(responseFromSlave);
-
-            return responseFromSlave;
+            List<byte> pdu = buildPdu(functionCode, startAddress, numAddress);
+            List<byte> mbapHeader = BuildMbapHeader(slaveId, pdu.Count());
+            this.MessageSendSlave = mbapHeader.Concat(pdu).ToArray();
         }
-        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, int addressStart, int numberRegisters)
+        public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int[] numAddress)
         {
-            messageSendSlave[0] = addressSlave;
-            messageSendSlave[1] = typeOfFunction;
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[2] = (byte)(addressStart >> 8);
-            messageSendSlave[3] = (byte)addressStart;
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[4] = (byte)(numberRegisters >> 8);
-            messageSendSlave[5] = (byte)numberRegisters;
-
-            return messageSendSlave; 
+            List<byte> pdu = buildPdu(functionCode, startAddress, numAddress);
+            List<byte> mbapHeader = BuildMbapHeader(slaveId, pdu.Count());
+            this.MessageSendSlave = mbapHeader.Concat(pdu).ToArray();
         }
-        public byte[] GetResponse(byte[] responseFromSlave)
+        public List<byte> BuildMbapHeader(byte slaveId, int lenghtPacket)
         {
-            ushort sizeAduFromSlave;
-            byte[] mbapFromSlave = new byte[7];
-            byte[] aduFromSlave;            
-
-            socket.Receive(mbapFromSlave, 0, mbapFromSlave.Length, SocketFlags.None);
-            sizeAduFromSlave = mbapFromSlave[4];
-            sizeAduFromSlave <<= 8;
-            sizeAduFromSlave += mbapFromSlave[5];
-            aduFromSlave = new byte[sizeAduFromSlave - 1];
-            socket.Receive(aduFromSlave, 0, aduFromSlave.Count(), SocketFlags.None);
-
-            responseFromSlave = mbapFromSlave.Concat(aduFromSlave).ToArray();
-
-            foreach(byte f in responseFromSlave)
+            //MBPA HEADER = TRNSITION ID + PROTOCOL ID + LENGHT + UNITID
+            //oltre che alla lunghezza della pdu bisogna contare anche la lunghezza dello slave;
+            lenghtPacket = lenghtPacket + 1;
+            List<byte> mbapHeader = new List<byte>
             {
-                Console.WriteLine(f);
-            }
-
-            return responseFromSlave;
-        }
-        private byte[] makeMBAP(ushort count)
-        {
-            return new byte[] {
-                0,                  //message id high byte
-                0,                  //message id low byte
-                0,                  //protocol id high byte
-                0,                  //protocol id low byte
-                (byte)(count >> 8), //length high byte
-                (byte)(count)       //length low byte
+                0,                          //transition id high byte
+                0,                          //transition id low byte      //DA MOFIFICARE
+                0,                          //protocol id high byte 
+                0,                          //protocol id low byte modbus = 0
+                (byte)(lenghtPacket >> 8),  //length high byte
+                (byte)(lenghtPacket),       //length low byte
+                (byte)(slaveId)             //slave id
             };
+            return mbapHeader;
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead)
+        private void OnSend(System.IAsyncResult result)
         {
-            byte byteStartRead = 9;
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-
-            for (int i = 0; i < byteCount; i++)
-            {
-                string binaryByteRead = Convert.ToString(responseFromSlave[byteStartRead + i], 2).PadLeft(8, '0');
-
-                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
-                for (int j = 0; j < binaryByteRead.Length; j++)
-                {
-                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
-                    addressStartRead++;
-                }
-            }
-            return valueRead;
+            socket.BeginReceive(_ResponseFromSlave, 0, _ResponseFromSlave.Length, SocketFlags.None, new AsyncCallback(OnReceive), socket);
         }
-        public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
+        private void OnReceive(System.IAsyncResult result)
         {
-            byte numberByteResponse = responseFromSlave[8];
-            byte startReadByte = 9;
+            socket.EndReceive(result);
+            ushort id = SwapUInt16(BitConverter.ToUInt16(_ResponseFromSlave, 0));
+            byte unit = _ResponseFromSlave[6];
+            byte function = _ResponseFromSlave[7];
+            byte[] data;
 
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < numberByteResponse; i++)
+            if(function >= 5)
             {
-                if ((9 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[startReadByte + i] | responseFromSlave[(startReadByte + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
+                data = new byte[2];
+                Array.Copy(_ResponseFromSlave, 10, data, 0, 2);
             }
-            return valueRead;
+            else
+            {
+                DataRecived = new byte[_ResponseFromSlave[8]];
+                Array.Copy(_ResponseFromSlave, 9, DataRecived, 0, _ResponseFromSlave[8]);
+            }
+            OnResponseData(_ResponseFromSlave);
+        }
+        private UInt16 SwapUInt16(UInt16 inValue)
+        {
+            return (UInt16)(((inValue & 0xff00) >> 8) |
+                     ((inValue & 0x00ff) << 8));
+        }
+        public override void GetResponse()
+        {
+            //code for reving sync data
+
         }
     }
 }

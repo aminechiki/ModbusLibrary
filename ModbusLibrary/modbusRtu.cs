@@ -4,11 +4,13 @@ using System.IO.Ports;
 
 namespace ModbusLibrary
 {
-    class modbusRtu : modbus
+    class ModbusRtu : Modbus
     {
         private SerialPort serialPort = new SerialPort();
-        public modbusRtu(string portName, int baudRate)
+        public ModbusRtu(string portName, int baudRate)
         {
+
+            /*
             //Ensure port isn't already opened:
             //Assign settings to the serial port:
             serialPort.PortName = portName;
@@ -30,63 +32,18 @@ namespace ModbusLibrary
             {
                 Console.WriteLine(ex);
             }
-        }        
-        public override byte[] SendPdu(byte addressSlave, byte[] messageSendSlave, byte[] responseFromSlave, byte typeOfFunction, int startWriteAddress, int numberRegisters)
-        {
-            messageSendSlave = buildPdu(messageSendSlave, addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
-
-            //messageSendSlave = buildPdu(addressSlave, typeOfFunction, startWriteAddress, numberRegisters);
-            //Console.WriteLine("MESSAGGIO INVIATO");
-            //foreach (byte m in messageSendSlave) Console.WriteLine(m);
-            try
-            {
-                serialPort.Write(messageSendSlave, 0, messageSendSlave.Length);
-                GetResponse(responseFromSlave);
-                //Console.WriteLine("MESSAGGIO RICEVUTO");
-                //foreach (byte m in responseFromSlave) Console.WriteLine(m);
-            }
-            catch (Exception err)
-            {
-                Console.WriteLine(err);
-            }
-
-            return responseFromSlave;
+            */
         }
-        //method use inside a function for send to send pdu to slave
-        private byte[] buildPdu(byte[] messageSendSlave, byte addressSlave, byte typeOfFunction, int addressStart, int numberRegisters)
-        {
-            byte[] CRC = new byte[2];
-            messageSendSlave[0] = addressSlave;
-            messageSendSlave[1] = typeOfFunction;
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[2] = (byte)(addressStart >> 8);
-            messageSendSlave[3] = (byte)addressStart;
-            //is divided into two bytes the value , the first one shifted by 8
-            messageSendSlave[4] = (byte)(numberRegisters >> 8);
-            messageSendSlave[5] = (byte)numberRegisters;
 
-            GetCRC(messageSendSlave, CRC);
-            //CRC - get the CRC with the methd and pot resul in two last position    
-            messageSendSlave[messageSendSlave.Length - 2] = CRC[0];
-            messageSendSlave[messageSendSlave.Length - 1] = CRC[1];
-
-            return messageSendSlave;
-        }
-        //These are the methods used by all functions
-        private void GetResponse(byte[] response)
-        {
-            for (int i = 0; i < response.Length; i++) response[i] = (byte)(serialPort.ReadByte());
-        }
-        //Alogirm CRC for find error when trasmition Data with serial communication
-        private void GetCRC(byte[] message, byte[] CRC)
+        public ushort GetCrc(byte[] pdu)
         {
             ushort crcFull = 0xFFFF;
             char crcLsb;
             // 1 - Implementation algoritm CRC
-            for (int i = 0; i < (message.Length) - 2; i++)
+            for (int i = 0; i < (pdu.Length) - 2; i++)
             {
                 //1 - XOR: only when one of the two bits 1 and the other 0 the result will be 1
-                crcFull ^= (ushort)message[i];
+                crcFull ^= (ushort)pdu[i];
                 //2 - It cycles 8 times because each message[i] is a byte (8 bits)
                 for (int j = 0; j < 8; j++)
                 {
@@ -104,47 +61,38 @@ namespace ModbusLibrary
                     }
                 }
             }
-            //2 - CRC is split into two bytes, the first one shifted by 8
-            CRC[1] = (byte)(crcFull >> 8);
-            CRC[0] = (byte)crcFull;
+
+            return crcFull;
         }
-        public override Dictionary<int, int> orderAddressDigitalFunction(byte[] responseFromSlave, int byteCount, int addressStartRead)
+
+        public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int numAddress)
         {
-            byte byteStartRead = 3;
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-
-            for (int i = 0; i < byteCount; i++)
-            {
-                string binaryByteRead = Convert.ToString(responseFromSlave[byteStartRead + i], 2).PadLeft(8, '0');
-
-                //6 - Converts the number of coils read from decimal to binary and enters it into the dictionary by coupling the bit to the register number
-                for (int j = 0; j < binaryByteRead.Length; j++)
-                {
-                    valueRead.Add(addressStartRead, int.Parse(binaryByteRead[(binaryByteRead.Length - 1) - j].ToString()));
-                    addressStartRead++;
-                }
-            }
-            return valueRead;
-
+            throw new NotImplementedException();
         }
-        public override Dictionary<int, int> orderAddressAnalogFunction(int addressStartRead, byte[] responseFromSlave)
+
+        public override void SendPacket()
         {
-            byte numberByteResponse = responseFromSlave[2];
-            byte startReadByte = 3;
-
-            Dictionary<int, int> valueRead = new Dictionary<int, int>();
-            int j = 0;
-            //4 - sum the two bytes to form a decimal number
-            for (int i = 0; i < numberByteResponse; i++)
-            {
-                if ((9 + i) % 2 == 0)
-                {
-                    valueRead.Add(addressStartRead, responseFromSlave[startReadByte + i] | responseFromSlave[(startReadByte + i) - 1] << 8);
-                    addressStartRead++;
-                    j++;
-                }
-            }
-            return valueRead;
+            throw new NotImplementedException();
         }
+
+        public override void GetResponse()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int[] numAddress)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool OpenConnection(string ipAddress, int port, bool connectionType)
+        {
+            throw new NotImplementedException();
+        }
+
+        //AGGIUNGERE METODI PER L'ORDINAMENTO DELLA RISPOSTA
+
+
+
     }
 }

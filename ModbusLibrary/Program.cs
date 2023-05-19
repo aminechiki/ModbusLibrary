@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Linq;
 using System;
+using System.Diagnostics.Tracing;
 
 namespace ModbusLibrary
 {
@@ -16,28 +17,51 @@ namespace ModbusLibrary
 
             // - la pdu deve avere una dimensione di 6 byte 
 
-            int[] valueMultipleRegisters = { 1, 2, 3, 4};
+            int[] valueMultipleRegisters = { 9, 18, 36, 42};
 
-            //ModbusTcpAsync modbus = new ModbusTcpAsync("127.0.0.1");
-            //modbus.readHoldingRegisters(0, 0, 2);
+            ModbusTcp modbusClient = new ModbusTcp("127.0.0.1", 502, true);
+            
+            modbusClient.OnResponseData += new ModbusTcp.ResponseData(MBmaster_OnResponseData);
+
+            //WRITE SINGLE COIL
+            //modbusClient.writeSingleCoil(0,3,true);
+            //WRITE MULTIPLE REGISTER
+
+            //WRITE SINGLE REGISTER
+            //modbusClient.writeSingleRegister(0,0,33);
+            //WRITE MULTIPLE REGISTERS
+            //modbusClient.writeMultipleRegisters(0,0,valueMultipleRegisters);
+
+            modbusClient.writeMultipleCoils(0,0,2);
+
+            while (true);
+        }
 
 
-            //modbus m = new modbusTcp("127.0.0.1");
-            //m.readHoldingRegisters(0, 0, 2);
+        
 
-            //modbus.writeSingleRegister(0, 5, 0);
+        private static void MBmaster_OnResponseData(byte[] values)
+        {
 
+            //Dispatcher.Invoke(() => ShowAs(values));
 
-            //modbus.writeSingleRegister(0, 0, 44);
+            foreach (byte b in values) Console.WriteLine(b);
 
-
-            //modbus.writeSingleRegister(0, 5, 24);
-
-
-            modbus m = new modbusTcp("127.0.0.1");
-            m.writeMultipleRegisters(0,0,valueMultipleRegisters);
-
-
+            /*
+            new Thread(() =>
+            {
+                string x = "Yes.";
+                // Invoke the dispatcher.
+                Dispatcher.Invoke((Action)delegate ()
+                {
+                    // Get the string off a UI element which contains the text, "No."
+                    string g = "";
+                    g = MBmaster.dataRecived[1].ToString();
+                    testo.Text = g;
+                });
+                // Is x either ("Yes" or "No") here, or always "No"?
+            }).Start();
+            */
         }
     }
 }
