@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO.Ports;
 
 namespace ModbusLibrary
@@ -7,10 +6,15 @@ namespace ModbusLibrary
     class ModbusRtu : Modbus
     {
         private SerialPort serialPort = new SerialPort();
-        public ModbusRtu(string portName, int baudRate)
+        public ModbusRtu(string portName, int baudRate, bool connectionType)
+        {
+            //Try to open connection
+            OpenConnection(portName, baudRate, connectionType);
+        }
+
+        public bool OpenConnection(string portName, int baudRate, bool connectionType)
         {
 
-            /*
             //Ensure port isn't already opened:
             //Assign settings to the serial port:
             serialPort.PortName = portName;
@@ -32,8 +36,12 @@ namespace ModbusLibrary
             {
                 Console.WriteLine(ex);
             }
-            */
+
+            _Connected = serialPort.IsOpen;
+
+            return _Connected;
         }
+
 
         public ushort GetCrc(byte[] pdu)
         {
@@ -67,28 +75,27 @@ namespace ModbusLibrary
 
         public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int numAddress)
         {
-            throw new NotImplementedException();
-        }
 
-        public override void SendPacket()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void GetResponse()
-        {
-            throw new NotImplementedException();
         }
 
         public override void BuildPacket(byte slaveId, byte functionCode, int startAddress, int[] numAddress)
         {
-            throw new NotImplementedException();
+
         }
 
-        public override bool OpenConnection(string ipAddress, int port, bool connectionType)
+        public override void SendPacket()
         {
-            throw new NotImplementedException();
+
         }
+
+        public override void GetResponse()
+        {
+            
+        }
+
+
+
+
 
         //AGGIUNGERE METODI PER L'ORDINAMENTO DELLA RISPOSTA
 

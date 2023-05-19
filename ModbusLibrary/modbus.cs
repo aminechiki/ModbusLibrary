@@ -12,6 +12,15 @@ namespace ModbusLibrary
 {
     abstract class Modbus
     {
+        protected bool _ConnectionType { get; set; }               //true = async 
+        protected bool _Connected;
+        public byte[] _ResponseFromSlave = new byte[2048];
+        protected byte[] DataRecived;
+        protected byte[] MessageSendSlave;
+        protected static ushort _timeout = 1000;
+
+        //vengono richiamti quando arriva un uovo dato  
+        public delegate void ResponseData(byte[] data);
         public Modbus() 
         {
 
@@ -206,6 +215,5 @@ namespace ModbusLibrary
         public abstract void BuildPacket(byte slaveId, byte functionCode, int startAddress, int numAddress);
         public abstract void SendPacket();
         public abstract void GetResponse();
-        public abstract bool OpenConnection(string ipAddress, int port, bool connectionType);
     }
 }

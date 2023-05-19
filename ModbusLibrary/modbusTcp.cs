@@ -14,17 +14,9 @@ namespace ModbusLibrary
     {
         private TcpClient client;
         private Socket socket;
-        private bool _ConnectionType { get; set; }               //true = async 
-        private bool _Connected;
-        public byte[] _ResponseFromSlave = new byte[2048];
-        public byte[] DataRecived;
-        private byte[] MessageSendSlave;
 
-        private static ushort _timeout = 100;
-
-        //vengono richiamti quando arriva un uovo dato
         public event ResponseData OnResponseData;
-        public delegate void ResponseData(byte[] data);
+
         public ushort timeout
         {
             get { return _timeout; }
@@ -35,7 +27,7 @@ namespace ModbusLibrary
             _ConnectionType = connectionType;
             OpenConnection(ipAddress, port, connectionType);
         }
-        public override bool OpenConnection(string ipAddress, int port, bool connectionType)
+        public bool OpenConnection(string ipAddress, int port, bool connectionType)
         {
             try
             {
@@ -128,7 +120,7 @@ namespace ModbusLibrary
                 DataRecived = new byte[_ResponseFromSlave[8]];
                 Array.Copy(_ResponseFromSlave, 9, DataRecived, 0, _ResponseFromSlave[8]);
             }
-            OnResponseData(_ResponseFromSlave);
+            this.OnResponseData(_ResponseFromSlave);
         }
         private UInt16 SwapUInt16(UInt16 inValue)
         {

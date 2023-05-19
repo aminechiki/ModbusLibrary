@@ -17,22 +17,32 @@ namespace ModbusLibrary
 
             // - la pdu deve avere una dimensione di 6 byte 
 
-            int[] valueMultipleRegisters = { 9, 18, 36, 42};
+            int[] valueMultipleRegisters = { 3, 4, 69, 8, 88, 12, 14, 77, 18, 55, 222};
 
-            ModbusTcp modbusClient = new ModbusTcp("127.0.0.1", 502, true);
+            ModbusTcp modbusClient = new ModbusTcp("192.168.0.1", 502, true);
+
+
+
             
+
             modbusClient.OnResponseData += new ModbusTcp.ResponseData(MBmaster_OnResponseData);
+
+
+            //READ SINGLE REGISER
+            //modbusClient.readHoldingRegisters(0, 0, 11);
+
+            Console.WriteLine(modbusClient._ResponseFromSlave);
 
             //WRITE SINGLE COIL
             //modbusClient.writeSingleCoil(0,3,true);
             //WRITE MULTIPLE REGISTER
 
             //WRITE SINGLE REGISTER
-            //modbusClient.writeSingleRegister(0,0,33);
+            modbusClient.writeSingleRegister(0,0,1);
             //WRITE MULTIPLE REGISTERS
             //modbusClient.writeMultipleRegisters(0,0,valueMultipleRegisters);
 
-            modbusClient.writeMultipleCoils(0,0,2);
+            //modbusClient.writeMultipleCoils(0,0,2);
 
             while (true);
         }
