@@ -31,14 +31,14 @@ namespace ModbusLibrary
             //READ SINGLE REGISER
             //modbusClient.readHoldingRegisters(0, 0, 11);
 
-            Console.WriteLine(modbusClient._ResponseFromSlave);
+            //Console.WriteLine(modbusClient._ResponseFromSlave);
 
             //WRITE SINGLE COIL
             //modbusClient.writeSingleCoil(0,3,true);
             //WRITE MULTIPLE REGISTER
 
             //WRITE SINGLE REGISTER
-            modbusClient.writeSingleRegister(0,0,1);
+            //modbusClient.writeSingleRegister(0,0,1);
             //WRITE MULTIPLE REGISTERS
             //modbusClient.writeMultipleRegisters(0,0,valueMultipleRegisters);
 
