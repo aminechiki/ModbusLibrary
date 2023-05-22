@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ModbusMaster
 {
-    abstract class Modbus
+    public abstract class Modbus
     {
         protected bool _ConnectionType { get; set; }               //true = async 
         protected bool _Connected;

@@ -10,7 +10,7 @@ using System.Windows.Markup;
 
 namespace ModbusMaster
 {
-    internal class ModbusTcp : Modbus
+    public class ModbusTcp : Modbus
     {
         private TcpClient client;
         private Socket socket;

@@ -4,6 +4,8 @@ using System.Net;
 using System.Linq;
 using System;
 using System.Diagnostics.Tracing;
+using ModbusMaster;
+
 
 namespace ModbusLibrary
 {
@@ -20,16 +22,13 @@ namespace ModbusLibrary
             int[] valueMultipleRegisters = { 3, 4, 69, 8, 88, 12, 14, 77, 18, 55, 222};
 
             ModbusTcp modbusClient = new ModbusTcp("127.0.0.1", 502, true);
-
-
-
-            
+        
 
             modbusClient.OnResponseData += new ModbusTcp.ResponseData(MBmaster_OnResponseData);
 
 
             //READ SINGLE REGISER
-            //modbusClient.readHoldingRegisters(0, 0, 11);
+            modbusClient.ReadHoldingRegisters(0, 0, 11);
 
             //Console.WriteLine(modbusClient._ResponseFromSlave);
 
@@ -38,7 +37,7 @@ namespace ModbusLibrary
             //WRITE MULTIPLE REGISTER
 
             //WRITE SINGLE REGISTER
-            modbusClient.WriteSingleRegister(0,0,40);
+            //modbusClient.WriteSingleRegister(0,0,40);
             //WRITE MULTIPLE REGISTERS
             //modbusClient.WriteMultipleRegisters(0,0,valueMultipleRegisters);
 
@@ -53,6 +52,7 @@ namespace ModbusLibrary
         private static void MBmaster_OnResponseData(byte[] values)
         {
 
+            Console.WriteLine("ciao");
             //Dispatcher.Invoke(() => ShowAs(values));
 
             //foreach (byte b in values) Console.WriteLine(b);

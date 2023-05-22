@@ -13,7 +13,6 @@ namespace ModbusMaster
             //Try to open connection
             OpenConnection(portName, baudRate, connectionType);
         }
-
         public bool OpenConnection(string portName, int baudRate, bool connectionType)
         {
 
