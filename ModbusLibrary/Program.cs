@@ -19,7 +19,7 @@ namespace ModbusLibrary
 
             int[] valueMultipleRegisters = { 3, 4, 69, 8, 88, 12, 14, 77, 18, 55, 222};
 
-            ModbusTcp modbusClient = new ModbusTcp("192.168.0.1", 502, true);
+            ModbusTcp modbusClient = new ModbusTcp("127.0.0.1", 502, true);
 
 
 
@@ -38,9 +38,9 @@ namespace ModbusLibrary
             //WRITE MULTIPLE REGISTER
 
             //WRITE SINGLE REGISTER
-            //modbusClient.writeSingleRegister(0,0,1);
+            modbusClient.WriteSingleRegister(0,0,40);
             //WRITE MULTIPLE REGISTERS
-            //modbusClient.writeMultipleRegisters(0,0,valueMultipleRegisters);
+            //modbusClient.WriteMultipleRegisters(0,0,valueMultipleRegisters);
 
             //modbusClient.writeMultipleCoils(0,0,2);
 
@@ -55,7 +55,7 @@ namespace ModbusLibrary
 
             //Dispatcher.Invoke(() => ShowAs(values));
 
-            foreach (byte b in values) Console.WriteLine(b);
+            //foreach (byte b in values) Console.WriteLine(b);
 
             /*
             new Thread(() =>

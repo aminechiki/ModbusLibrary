@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "dgSpecHash": "wcUfvzh+ZnUWjDbSVqhB4cZoo2B5ud3YiicqUEdt6OYRBRwr42Qel5Y7lyRSUfB/YR6J2zOXvfexCL8ZP4yUKg==",
-  "success": true,
+  "dgSpecHash": "nPyNu5Sb+rW/LI+1CuX7Mt4yCnjG4h4kLqSbCNZ2SoXTWFszbcEijXk8ntfpE8YYkc/pB3smI9ATn24yLibBcw==",
+  "success": false,
   "projectFilePath": "C:\\Users\\User\\Documents\\_ANNO 2022-23\\STAGE MOSAICO GROUP\\APPUNTI MODBUS\\LIBRERIA MODBUS\\ModbusLibrary\\ModbusLibrary\\ModbusLibrary.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\User\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
@@ -16,5 +16,15 @@
     "C:\\Users\\User\\.nuget\\packages\\system.security.principal.windows\\5.0.0\\system.security.principal.windows.5.0.0.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\5.0.14\\microsoft.netcore.app.host.win-x64.5.0.14.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1201",
+      "level": "Error",
+      "message": "Project ModbusMaster is not compatible with net5.0 (.NETCoreApp,Version=v5.0). Project ModbusMaster supports: net6.0 (.NETCoreApp,Version=v6.0)",
+      "libraryId": "ModbusMaster",
+      "targetGraphs": [
+        "net5.0"
+      ]
+    }
+  ]
 }

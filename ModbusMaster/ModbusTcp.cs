@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using System.Windows.Markup;
 
-namespace ModbusLibrary
+namespace ModbusMaster
 {
     internal class ModbusTcp : Modbus
     {
